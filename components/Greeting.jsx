@@ -19,7 +19,7 @@ export default function Greeting() {
   }
   const late = (has('finance') ? overdue : 0) + overdueDocs;
   if (late) bits.push(`${late} overdue`);
-  const mine = has('boiler') ? keys.find((k) => k.by === me) : null;
+  const mine = has('boiler') ? keys.find((k) => k.byId === me) : null;
   if (mine) bits.push(`you have key ${mine.n}`);
   const line = bits.length ? `${bits.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'All clear. Nothing needs you right now. 🏁';
 

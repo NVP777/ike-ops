@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Sheet from '@/components/Sheet';
+import CarLoader from '@/components/CarLoader';
 import { useApp } from '@/lib/store';
 import { inr, fmtDate, fmtStamp, daysSince, todayISO, TAGS } from '@/lib/data';
 
@@ -53,10 +54,10 @@ function StockSheet({ initial, onClose, onSave }) {
   const [name, setName] = useState(initial?.name || ''); const [qty, setQty] = useState(initial ? String(initial.qty) : '');
   const [unit, setUnit] = useState(initial?.unit || 'pcs'); const [min, setMin] = useState(initial?.min != null ? String(initial.min) : '');
   const [tag, setTag] = useState(initial?.tag || 'Miscellaneous'); const [loc, setLoc] = useState(initial?.loc || ''); const [note, setNote] = useState(initial?.note || '');
-  const [photo, setPhoto] = useState(initial?.photo || null);
+  const [photo, setPhoto] = useState(initial?.photo || null); const [photoFile, setPhotoFile] = useState(null);
   const save = () => {
     if (!name.trim() || qty === '' || +qty < 0) return say('Add a name and a quantity');
-    onSave({ name: name.trim(), qty: +qty, unit: unit.trim() || 'pcs', min: min === '' ? null : +min, tag, loc: loc.trim(), note: note.trim(), photo });
+    onSave({ name: name.trim(), qty: +qty, unit: unit.trim() || 'pcs', min: min === '' ? null : +min, tag, loc: loc.trim(), note: note.trim(), photo, photoFile });
   };
   return (
     <Sheet onClose={onClose}>
@@ -71,8 +72,8 @@ function StockSheet({ initial, onClose, onSave }) {
       <label htmlFor="s6">Location (optional)</label><input id="s6" value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Shelf A2" />
       <label htmlFor="s7">Notes (optional)</label><textarea id="s7" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
       <label htmlFor="s8">Photo (optional)</label>
-      <input id="s8" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhoto(URL.createObjectURL(f)); }} />
-      {photo && (<><img className="rcpt" src={photo} alt="Item photo preview" /><button className="lnk" onClick={() => setPhoto(null)}>Remove photo</button></>)}
+      <input id="s8" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPhoto(URL.createObjectURL(f)); setPhotoFile(f); } }} />
+      {photo && (<><img className="rcpt" src={photo} alt="Item photo preview" /><button className="lnk" onClick={() => { setPhoto(null); setPhotoFile(null); }}>Remove photo</button></>)}
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{isNew ? 'Save item' : 'Save changes'}</button></div>
     </Sheet>
   );
@@ -164,7 +165,7 @@ function ExportSheet({ tab, count, onPick, onClose }) {
 }
 
 export default function Inventory() {
-  const { me, has, canEdit, stock, stockLog, addStock, updateStock, deleteStock, adjustStock, receiveReq, reqs, addReq, updateReq, deleteReq, pendingReqs, say } = useApp();
+  const { me, ready, has, canEdit, stock, stockLog, addStock, updateStock, deleteStock, adjustStock, receiveReq, reqs, addReq, updateReq, deleteReq, pendingReqs, say } = useApp();
   const [tab, setTab] = useState('st');
   const [q, setQ] = useState(''); const [f, setF] = useState(defFor('st')); const [showF, setShowF] = useState(false);
   const [adding, setAdding] = useState(false); const [edit, setEdit] = useState(null); const [viewId, setViewId] = useState(null);
@@ -176,11 +177,11 @@ export default function Inventory() {
   const needle = q.trim().toLowerCase();
   const stockList = stock.filter((s) =>
     (!needle || `${s.name} ${s.loc || ''} ${s.note || ''} ${s.tag} ${s.author}`.toLowerCase().includes(needle)) &&
-    (f.tag === 'all' || s.tag === f.tag) && (f.who === 'all' || s.author === me) && (f.level === 'all' || isLow(s))
+    (f.tag === 'all' || s.tag === f.tag) && (f.who === 'all' || s.authorId === me) && (f.level === 'all' || isLow(s))
   ).sort(cmpS[f.sort] || cmpS.az);
   const reqList = reqs.filter((r) =>
     (!needle || `${r.name} ${r.note || ''} ${r.tag} ${r.author}`.toLowerCase().includes(needle)) &&
-    (f.tag === 'all' || r.tag === f.tag) && (f.who === 'all' || r.author === me) && (f.status === 'all' || r.status === f.status)
+    (f.tag === 'all' || r.tag === f.tag) && (f.who === 'all' || r.authorId === me) && (f.status === 'all' || r.status === f.status)
   ).sort(cmpR[f.sort] || cmpR.new);
   const keys = tab === 'st' ? ['tag', 'who', 'level'] : ['tag', 'who', 'status'];
   const active = keys.filter((k) => f[k] !== defFor(tab)[k]).length;
@@ -265,7 +266,7 @@ export default function Inventory() {
       </div>
 
       <div className="glass pad">
-        {shown === 0 && <div className="empty">Nothing matches.</div>}
+        {shown === 0 && <div className="empty">{ready ? (total ? 'Nothing matches.' : (tab === 'st' ? 'No items yet. Tap Add to start.' : 'No requests yet.')) : <CarLoader />}</div>}
         {tab === 'st' && stockList.map((s) => (
           <div className="row click" key={s.id} role="button" tabIndex={0} onClick={() => open(s.id)} onKeyDown={(e) => e.key === 'Enter' && open(s.id)}>
             {s.photo && <img className="thumb" src={s.photo} alt="" />}
@@ -289,12 +290,12 @@ export default function Inventory() {
         })}
       </div>
 
-      {adding && tab === 'st' && <StockSheet onClose={() => setAdding(false)} onSave={(d) => { addStock(d); setAdding(false); }} />}
-      {adding && tab === 're' && <ReqSheet onClose={() => setAdding(false)} onSave={(d) => { addReq(d); setAdding(false); }} />}
-      {edit && tab === 'st' && <StockSheet initial={edit} onClose={() => setEdit(null)} onSave={(d) => { updateStock(edit.id, d); setEdit(null); }} />}
-      {edit && tab === 're' && <ReqSheet initial={edit} onClose={() => setEdit(null)} onSave={(d) => { updateReq(edit.id, d); setEdit(null); }} />}
-      {adj && adjItem && <AdjustSheet item={adjItem} mode={adj.mode} onClose={() => setAdj(null)} onSave={(delta, note) => { adjustStock(adjItem.id, delta, note); setAdj(null); }} />}
-      {recv && vr && <ReceiveSheet req={vr} stock={stock} onClose={() => setRecv(false)} onConfirm={(t) => { receiveReq(vr.id, t); setRecv(false); }} />}
+      {adding && tab === 'st' && <StockSheet onClose={() => setAdding(false)} onSave={async (d) => { if (await addStock(d)) setAdding(false); }} />}
+      {adding && tab === 're' && <ReqSheet onClose={() => setAdding(false)} onSave={async (d) => { if (await addReq(d)) setAdding(false); }} />}
+      {edit && tab === 'st' && <StockSheet initial={edit} onClose={() => setEdit(null)} onSave={async (d) => { if (await updateStock(edit.id, d)) setEdit(null); }} />}
+      {edit && tab === 're' && <ReqSheet initial={edit} onClose={() => setEdit(null)} onSave={async (d) => { if (await updateReq(edit.id, d)) setEdit(null); }} />}
+      {adj && adjItem && <AdjustSheet item={adjItem} mode={adj.mode} onClose={() => setAdj(null)} onSave={async (delta, note) => { if (await adjustStock(adjItem.id, delta, note)) setAdj(null); }} />}
+      {recv && vr && <ReceiveSheet req={vr} stock={stock} onClose={() => setRecv(false)} onConfirm={async (t) => { if (await receiveReq(vr.id, t)) setRecv(false); }} />}
       {exp && <ExportSheet tab={tab} count={shown} onPick={exportNow} onClose={() => setExp(false)} />}
 
       {vs && !adj && (

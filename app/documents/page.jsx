@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Sheet from '@/components/Sheet';
+import CarLoader from '@/components/CarLoader';
 import { useApp } from '@/lib/store';
 import { fmtDate, daysSince, todayISO, TAGS } from '@/lib/data';
 
@@ -35,7 +36,7 @@ function AttachFields({ file, setFile, link, setLink }) {
   return (
     <>
       <label htmlFor="a1">File (optional)</label>
-      <input id="a1" type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile({ name: f.name, size: f.size, type: f.type, url: URL.createObjectURL(f) }); }} />
+      <input id="a1" type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile({ name: f.name, size: f.size, type: f.type, url: URL.createObjectURL(f), raw: f }); }} />
       {file && <div className="m" style={{ marginTop: 8 }}>{file.name} ({fmtSize(file.size)})</div>}
       <label htmlFor="a2">Link (optional)</label>
       <input id="a2" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="drive.google.com/..." />
@@ -96,7 +97,7 @@ function VersionSheet({ next, onClose, onSave }) {
 const A = { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: 10 };
 
 export default function Documents() {
-  const { me, docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, canEdit } = useApp();
+  const { me, ready, docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, canEdit } = useApp();
   const [tab, setTab] = useState('doc');
   const [q, setQ] = useState(''); const [f, setF] = useState(DEF); const [showF, setShowF] = useState(false);
   const [adding, setAdding] = useState(false); const [edit, setEdit] = useState(null); const [viewId, setViewId] = useState(null); const [newVer, setNewVer] = useState(false);
@@ -108,7 +109,7 @@ export default function Documents() {
   const list = inTab.filter((d) => {
     const c = d.versions[0];
     return (!needle || `${d.title} ${d.desc || ''} ${d.author} ${d.tag} ${c?.file?.name || ''} ${c?.link || ''}`.toLowerCase().includes(needle)) &&
-      (f.tag === 'all' || d.tag === f.tag) && (f.who === 'all' || d.author === me) &&
+      (f.tag === 'all' || d.tag === f.tag) && (f.who === 'all' || d.authorId === me) &&
       (f.dl === 'all' || (f.dl === 'over' ? isOver(d) : !!d.due));
   }).sort(cmp[f.sort]);
   const active = ['tag', 'who', 'dl'].filter((k) => f[k] !== DEF[k]).length;
@@ -144,7 +145,7 @@ export default function Documents() {
       <div className="cnt"><span className="m">{list.length === inTab.length ? `${list.length} ${WORDS[tab][1].toLowerCase()}` : `${list.length} of ${inTab.length} shown`}</span></div>
 
       <div className="glass pad">
-        {list.length === 0 && <div className="empty">Nothing matches.</div>}
+        {list.length === 0 && <div className="empty">{ready ? (inTab.length ? 'Nothing matches.' : 'Nothing here yet. Tap Add to start.') : <CarLoader />}</div>}
         {list.map((d) => {
           const dl = dueLabel(d), at = attachText(d.versions[0]);
           return (
@@ -163,8 +164,8 @@ export default function Documents() {
         })}
       </div>
 
-      {adding && <DocSheet kind={tab} onClose={() => setAdding(false)} onSave={(d) => { addDoc(d, !!d.copy); setAdding(false); }} />}
-      {edit && <DocSheet kind={edit.kind} initial={edit} onClose={() => setEdit(null)} onSave={(d) => { updateDoc(edit.id, d); setEdit(null); }} />}
+      {adding && <DocSheet kind={tab} onClose={() => setAdding(false)} onSave={async (d) => { if (await addDoc(d, !!d.copy)) setAdding(false); }} />}
+      {edit && <DocSheet kind={edit.kind} initial={edit} onClose={() => setEdit(null)} onSave={async (d) => { if (await updateDoc(edit.id, d)) setEdit(null); }} />}
       {viewer && (
         <Sheet onClose={() => setViewer(null)}>
           <h1 className="sh">{viewer.title}</h1>
@@ -176,7 +177,7 @@ export default function Documents() {
           </div>
         </Sheet>
       )}
-      {newVer && vd && <VersionSheet next={(cur?.n || 0) + 1} onClose={() => setNewVer(false)} onSave={(v) => { addVersion(vd.id, v); setNewVer(false); }} />}
+      {newVer && vd && <VersionSheet next={(cur?.n || 0) + 1} onClose={() => setNewVer(false)} onSave={async (v) => { if (await addVersion(vd.id, v)) setNewVer(false); }} />}
 
       {vd && !newVer && !viewer && (
         <Sheet onClose={() => setViewId(null)}>
