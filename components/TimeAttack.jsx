@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthProvider';
+import Leaderboard from './Leaderboard';
+import { submitScore } from '@/lib/scores';
 
 // TIME ATTACK. A real lap, not an endless runner: today's track is the same for everyone (it is built from the date),
 // it has a finish line, three checkpoints named after the car's subsystems that add time, a ghost of your best run,
@@ -147,6 +149,7 @@ export default function TimeAttack({ onExit }) {
   const parRef = useRef(null);
   const medals = par ? medalList(par) : [];
   const [copied, setCopied] = useState(false);
+  const [board, setBoard] = useState(0);
 
   const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
 
@@ -168,6 +171,7 @@ export default function TimeAttack({ onExit }) {
       G.phase = 'done'; setPhase('done'); inp.current = 0;
       buzz(kind === 'finish' ? [30, 40, 30, 40, 100] : [200]);
       if (kind === 'finish') {
+        submitScore('lap', G.t * 1000).then(() => setBoard((b) => b + 1));
         const time = G.t, prev = readSaved(), pb = !prev || time < prev.t;
         if (pb) { const rec = { t: time, g: G.rec }; try { localStorage.setItem(`ike-lap-${day}`, JSON.stringify(rec)); } catch {} setSaved(rec); }
         setResult({ kind, time, medal: medalFor(time, parRef.current), pb, best: pb ? time : prev.t });
@@ -309,6 +313,7 @@ export default function TimeAttack({ onExit }) {
           <div className="m" style={{ maxWidth: 300 }}>One lap, {L} m. Hold the left or right half of the screen to steer. Checkpoints add {BONUS} seconds. Same track for everyone today.</div>
           <div className="medals">{medals.map(([n, lim, col]) => <span key={n}><i style={{ background: col }} />{n} {fmt(lim)}</span>)}</div>
           {saved?.t && <div className="m">Your best today: <b style={{ color: 'var(--text,#f4efee)' }}>{fmt(saved.t)}</b>. Its ghost races you.</div>}
+          <Leaderboard game="lap" fmt={(ms) => fmt(ms / 1000)} refresh={board} />
           <button className="btn" style={{ padding: '14px 34px', fontSize: 16 }} onClick={start}>START</button>
         </div>
       )}
@@ -323,6 +328,7 @@ export default function TimeAttack({ onExit }) {
             <div className="gar-title" style={{ fontSize: 40 }}>OUT OF TIME</div>
             <div className="m">You made it {result.dist} m of {L} m. Hit the checkpoints to add time.</div>
           </>)}
+          {result.kind === 'finish' && <Leaderboard game="lap" fmt={(ms) => fmt(ms / 1000)} refresh={board} />}
           <div className="two" style={{ width: 'min(100%,320px)' }}>
             <button className="btn grow" onClick={again}>Go again</button>
             {result.kind === 'finish' && <button className="btn ghost grow" onClick={share}>{copied ? 'Copied' : 'Share time'}</button>}

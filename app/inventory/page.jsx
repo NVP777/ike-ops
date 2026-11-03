@@ -62,14 +62,14 @@ function StockSheet({ initial, onClose, onSave }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? 'Add item' : 'Edit item'}</h1>
-      <label htmlFor="s1">Item name</label><input id="s1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Hex bolts M8" />
+      <label htmlFor="s1">Item name</label><input id="s1" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="fgrid">
         <div><label htmlFor="s2">Quantity</label><input id="s2" type="number" inputMode="decimal" step="any" value={qty} onChange={(e) => setQty(e.target.value)} /></div>
-        <div><label htmlFor="s3">Unit</label><input id="s3" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs" /></div>
-        <div><label htmlFor="s4">Low stock alert at (optional)</label><input id="s4" type="number" inputMode="decimal" step="any" value={min} onChange={(e) => setMin(e.target.value)} placeholder="40" /></div>
+        <div><label htmlFor="s3">Unit</label><input id="s3" value={unit} onChange={(e) => setUnit(e.target.value)} /></div>
+        <div><label htmlFor="s4">Low stock alert at (optional)</label><input id="s4" type="number" inputMode="decimal" step="any" value={min} onChange={(e) => setMin(e.target.value)} /></div>
         <div><label htmlFor="s5">Tag</label><select id="s5" value={tag} onChange={(e) => setTag(e.target.value)}>{TAGS.map((t) => <option key={t}>{t}</option>)}</select></div>
       </div>
-      <label htmlFor="s6">Location (optional)</label><input id="s6" value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Shelf A2" />
+      <label htmlFor="s6">Location (optional)</label><input id="s6" value={loc} onChange={(e) => setLoc(e.target.value)} />
       <label htmlFor="s7">Notes (optional)</label><textarea id="s7" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
       <label htmlFor="s8">Photo (optional)</label>
       <input id="s8" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPhoto(URL.createObjectURL(f)); setPhotoFile(f); } }} />
@@ -94,14 +94,14 @@ function ReqSheet({ initial, onClose, onSave }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? 'Request an item' : 'Edit request'}</h1>
-      <label htmlFor="q1">What do we need</label><input id="q1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Steering rack" />
+      <label htmlFor="q1">What do we need</label><input id="q1" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="fgrid">
         <div><label htmlFor="q2">Quantity</label><input id="q2" type="number" inputMode="decimal" step="any" value={qty} onChange={(e) => setQty(e.target.value)} /></div>
         <div><label htmlFor="q3">Estimated cost (₹, optional)</label><input id="q3" type="number" inputMode="numeric" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
         <div><label htmlFor="q4">Tag</label><select id="q4" value={tag} onChange={(e) => setTag(e.target.value)}>{TAGS.map((t) => <option key={t}>{t}</option>)}</select></div>
         {!isNew && has('admin') && <div><label htmlFor="q6">Status</label><select id="q6" value={status} onChange={(e) => setStatus(e.target.value)}>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v[0]}</option>)}</select></div>}
       </div>
-      <label htmlFor="q5">Why (optional)</label><textarea id="q5" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why do we need it?" />
+      <label htmlFor="q5">Why (optional)</label><textarea id="q5" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{isNew ? 'Send request' : 'Save changes'}</button></div>
     </Sheet>
   );
@@ -122,8 +122,8 @@ function AdjustSheet({ item, mode, onClose, onSave }) {
     <Sheet onClose={onClose}>
       <h1 className="sh">{use ? 'Take out' : 'Add stock'}</h1>
       <div className="m" style={{ marginTop: 6 }}>{item.name}: {item.qty} {item.unit} in stock now</div>
-      <label htmlFor="j1">How many {item.unit}</label><input id="j1" type="number" inputMode="decimal" step="any" value={n} onChange={(e) => setN(e.target.value)} placeholder="5" autoFocus />
-      <label htmlFor="j2">What for (optional)</label><input id="j2" value={note} onChange={(e) => setNote(e.target.value)} placeholder={use ? 'Chassis build' : 'Bought from market'} />
+      <label htmlFor="j1">How many {item.unit}</label><input id="j1" type="number" inputMode="decimal" step="any" value={n} onChange={(e) => setN(e.target.value)} autoFocus />
+      <label htmlFor="j2">What for (optional)</label><input id="j2" value={note} onChange={(e) => setNote(e.target.value)} />
       <div className="m" style={{ marginTop: 12 }}>After this: <b className={use && after <= (item.min ?? -1) ? 'redt' : ''}>{after} {item.unit}</b></div>
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{use ? 'Take out' : 'Add'}</button></div>
     </Sheet>
@@ -266,7 +266,7 @@ export default function Inventory() {
       </div>
 
       <div className="glass pad">
-        {shown === 0 && <div className="empty">{ready ? (total ? 'Nothing matches.' : (tab === 'st' ? 'No items yet. Tap Add to start.' : 'No requests yet.')) : <CarLoader />}</div>}
+        {shown === 0 && <div className="empty">{ready ? (total ? 'No results match your search.' : (tab === 'st' ? 'No items have been added yet.' : 'No requests have been made yet.')) : <CarLoader />}</div>}
         {tab === 'st' && stockList.map((s) => (
           <div className="row click" key={s.id} role="button" tabIndex={0} onClick={() => open(s.id)} onKeyDown={(e) => e.key === 'Enter' && open(s.id)}>
             {s.photo && <img className="thumb" src={s.photo} alt="" />}

@@ -39,7 +39,7 @@ function AttachFields({ file, setFile, link, setLink }) {
       <input id="a1" type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile({ name: f.name, size: f.size, type: f.type, url: URL.createObjectURL(f), raw: f }); }} />
       {file && <div className="m" style={{ marginTop: 8 }}>{file.name} ({fmtSize(file.size)})</div>}
       <label htmlFor="a2">Link (optional)</label>
-      <input id="a2" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="drive.google.com/..." />
+      <input id="a2" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} />
     </>
   );
 }
@@ -61,8 +61,8 @@ function DocSheet({ kind, initial, onClose, onSave }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? `Add ${WORDS[kind][0]}` : `Edit ${WORDS[kind][0]}`}</h1>
-      <label htmlFor="d1">Title</label><input id="d1" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chassis build checklist" />
-      <label htmlFor="d2">Description (optional)</label><textarea id="d2" rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What is this about?" />
+      <label htmlFor="d1">Title</label><input id="d1" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <label htmlFor="d2">Description (optional)</label><textarea id="d2" rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} />
       <div className="fgrid">
         <div><label htmlFor="d3">Tag</label><select id="d3" value={tag} onChange={(e) => setTag(e.target.value)}>{TAGS.map((t) => <option key={t}>{t}</option>)}</select></div>
         <div><label htmlFor="d5">Deadline (optional)</label><input id="d5" type="date" value={due} onChange={(e) => setDue(e.target.value)} /></div>
@@ -86,7 +86,7 @@ function VersionSheet({ next, onClose, onSave }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">New version (v{next})</h1>
-      <label htmlFor="v1">What changed (optional)</label><input id="v1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Fixed the torque values" />
+      <label htmlFor="v1">What changed (optional)</label><input id="v1" value={note} onChange={(e) => setNote(e.target.value)} />
       <AttachFields file={file} setFile={setFile} link={link} setLink={setLink} />
       <div className="m" style={{ marginTop: 8 }}>The previous version stays in the history.</div>
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>Save version</button></div>

@@ -31,12 +31,12 @@ function SubSheet({ initial, canDelete, onClose, onSave, onDelete }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? 'Add subsystem' : 'Update subsystem'}</h1>
-      <label htmlFor="u1">Name</label><input id="u1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Chassis" />
-      <label htmlFor="u2">Who is in charge</label><input id="u2" value={lead} onChange={(e) => setLead(e.target.value)} placeholder="Aarav Mehta" />
-      <label htmlFor="u3">Working on now</label><textarea id="u3" rows={3} value={task} onChange={(e) => setTask(e.target.value)} placeholder="Validate mounting points for the next test session" />
+      <label htmlFor="u1">Name</label><input id="u1" value={name} onChange={(e) => setName(e.target.value)} />
+      <label htmlFor="u2">Who is in charge</label><input id="u2" value={lead} onChange={(e) => setLead(e.target.value)} />
+      <label htmlFor="u3">Working on now</label><textarea id="u3" rows={3} value={task} onChange={(e) => setTask(e.target.value)} />
       <label htmlFor="u4">Status</label>
       <select id="u4" value={status} onChange={(e) => setStatus(e.target.value)}>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v[0]}</option>)}</select>
-      {status === 'blocked' && (<><label htmlFor="u5">Waiting for</label><input id="u5" value={why} onChange={(e) => setWhy(e.target.value)} placeholder="The updated CAD reference" /></>)}
+      {status === 'blocked' && (<><label htmlFor="u5">Waiting for</label><input id="u5" value={why} onChange={(e) => setWhy(e.target.value)} /></>)}
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{isNew ? 'Add' : 'Save'}</button></div>
       {!isNew && canDelete && <button className="btn ghost full" style={{ marginTop: 10, color: 'var(--red2)' }} onClick={onDelete}>Delete subsystem</button>}
     </Sheet>
@@ -56,7 +56,7 @@ export default function Home() {
       {overdueDocs > 0 && <div className="alert r">{overdueDocs} item{overdueDocs > 1 ? 's' : ''} in Documents past deadline.</div>}
       {has('inventory') && pendingReqs > 0 && <div className="alert">{pendingReqs} inventory request{pendingReqs > 1 ? 's are' : ' is'} waiting for approval.</div>}
 
-      {has('finance') && (<>
+      {has('financeTotals') && (<>
         <h2>Balances</h2>
         <div className="glass bal">{balances.map((b) => (<div key={b.id}><div className="m">{b.label}</div><div className="num green"><Money v={b.value} /></div></div>))}</div>
       </>)}
@@ -84,7 +84,7 @@ export default function Home() {
         <h2>Subsystems<span>{activeN} active</span></h2>
         <div className="glass pad">
           {!ready && subs.length === 0 && <CarLoader />}
-          {ready && subs.length === 0 && <div className="empty">No subsystems yet. Add the parts of your car, like chassis, powertrain, or aero.</div>}
+          {ready && subs.length === 0 && <div className="empty">No subsystems have been added yet. You can add the parts of the car, like chassis, powertrain or aero.</div>}
           {subs.map((s) => {
             const [label, cls] = STATUS[s.status];
             return (

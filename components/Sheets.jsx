@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sheet from './Sheet';
 import { useApp } from '@/lib/store';
-import { COUNT, PAGES } from '@/lib/nav';
+import { PAGES } from '@/lib/nav';
 
 export function NotifSheet() {
   const { notifs, has, markRead, setSheet } = useApp();
@@ -17,25 +17,8 @@ export function NotifSheet() {
           <div className="grow"><div className="t">{!n.read && <span className="dot">● </span>}{n.t}</div><div className="m">{n.b}</div></div>
           <div className="m">{n.w}</div>
         </div>
-      )) : <div className="empty">Nothing yet. Announcements show up here.</div>}
+      )) : <div className="empty">Announcements will show up here once someone sends one.</div>}
       {has('announce') && <p style={{ marginTop: 16 }}><button className="btn" onClick={() => setSheet('announce')}>Send announcement</button></p>}
-    </Sheet>
-  );
-}
-
-export function AnnounceSheet() {
-  const { setSheet, pushAnnouncement, say } = useApp();
-  const [t, setT] = useState(''); const [b, setB] = useState(''); const [a, setA] = useState('Everyone');
-  const send = () => { if (!t.trim()) return say('Add a title first'); pushAnnouncement(t.trim(), b.trim(), COUNT[a]); setSheet(null); };
-  return (
-    <Sheet onClose={() => setSheet(null)}>
-      <h1 className="sh">New announcement</h1>
-      <label htmlFor="at">Title</label><input id="at" value={t} onChange={(e) => setT(e.target.value)} placeholder="Shakedown moved to 7 pm" />
-      <label htmlFor="ab">Message</label><textarea id="ab" rows={3} value={b} onChange={(e) => setB(e.target.value)} placeholder="What does the team need to know?" />
-      <label htmlFor="aa">Send to</label>
-      <select id="aa" value={a} onChange={(e) => setA(e.target.value)}>{Object.keys(COUNT).map((k) => <option key={k}>{k}</option>)}</select>
-      <p className="m" style={{ marginTop: 10 }}>This will notify {COUNT[a]} people.</p>
-      <div className="two"><button className="btn ghost" onClick={() => setSheet(null)}>Cancel</button><button className="btn grow" onClick={send}>Push to team</button></div>
     </Sheet>
   );
 }

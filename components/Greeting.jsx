@@ -21,7 +21,7 @@ export default function Greeting() {
   if (late) bits.push(`${late} overdue`);
   const mine = has('boiler') ? keys.find((k) => k.byId === me) : null;
   if (mine) bits.push(`you have key ${mine.n}`);
-  const line = bits.length ? `${bits.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'All clear. Nothing needs you right now. 🏁';
+  const line = bits.length ? `${bits.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'You have nothing pending right now. 🏁';
 
   return (
     <div className="greet">

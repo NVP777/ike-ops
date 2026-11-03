@@ -35,18 +35,18 @@ export default function Profile() {
           ))}
           <button className="btn full" style={{ marginTop: 18 }} onClick={() => saveOpening(vals)}>Save changes</button>
         </div>
-        <h2>Background alert color<span>Captain only</span></h2>
-        <div className="glass pad2">
-          <div className="m" style={{ marginBottom: 12 }}>The background shifts to this color when something is overdue. Drag the ring or pick a preset.</div>
-          <AlertColor hue={alertHue} onChange={setAlertHue} />
-          <div className="two" style={{ marginTop: 16 }}>
-            <button className="btn ghost grow" onClick={previewAlert}>Preview</button>
-            <button className="btn ghost grow" onClick={() => setAlertHue(38)}>Reset to amber</button>
-          </div>
-        </div>
         <h2>Tags</h2>
         <div className="m">Every transaction is tagged with one of: {TAGS.join(', ')}.</div>
       </>)}
+      <h2>Background color<span>Just for you</span></h2>
+      <div className="glass pad2">
+        <div className="m" style={{ marginBottom: 12 }}>Pick the color of your app background. It is saved to your account and follows you to any device. Drag the ring or pick a preset.</div>
+        <AlertColor hue={alertHue} onChange={setAlertHue} />
+        <div className="two" style={{ marginTop: 16 }}>
+          <button className="btn ghost grow" onClick={previewAlert}>Preview</button>
+          <button className="btn ghost grow" onClick={() => setAlertHue(38)}>Reset to amber</button>
+        </div>
+      </div>
       <button className="made" onClick={() => setParty({ k: Date.now() })}>
         Made with <span className="heart">❤️</span> by Naman Panpalia <span className="m"></span>
       </button>

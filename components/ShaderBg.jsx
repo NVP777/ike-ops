@@ -17,11 +17,10 @@ export const SHADER = {
 };
 
 export default function ShaderBg() {
-  // alertHue: the captain's chosen color (38 is amber). preview: shown live while picking a color.
-  const { attention, alertHue, preview } = useApp();
-  const on = attention > 0 || preview;
+  // alertHue: each person's chosen background color (38 is the amber default). preview: speeds the animation up while picking.
+  const { alertHue, preview } = useApp();
   return (
-    <div className={`shader${preview ? ' fast' : ''}`} aria-hidden="true" style={{ filter: `hue-rotate(${on ? alertHue : 0}deg)` }}>
+    <div className={`shader${preview ? ' fast' : ''}`} aria-hidden="true" style={{ filter: `hue-rotate(${alertHue}deg)` }}>
       <Canvas style={{ position: 'absolute', inset: 0 }} pixelDensity={0.75} fov={40}>
         <Gradient control="props" {...SHADER} />
       </Canvas>

@@ -44,7 +44,7 @@ export function AppProvider({ children }) {
   const [flag, setFlag] = useState(null);
   const [licence, setLicence] = useState(false); // double-tap your profile
   const [garage, setGarage] = useState(false);   // hold the IKE logo
-  // Alert color: a hue (0 to 359) the captain picks. Saved on their account, so it follows them to any device.
+  // Background color: a hue (0 to 359, 38 = amber, the default) each person picks. Saved on their account, so it follows them to any device.
   const [hue, setHue] = useState(typeof user.alertHue === 'number' ? user.alertHue : 38);
   const [preview, setPreview] = useState(false);
   const saveTimer = useRef(null), previewTimer = useRef(null), queued = useRef({});
@@ -251,6 +251,14 @@ export function AppProvider({ children }) {
       say(msg); await loadFinance(); return true;
     } catch (e) { return fail(e, 'Could not save the changes'); }
   };
+  // Captain or the person who posted the claim. (The database must enforce this too.)
+  const deleteReimb = async (id) => {
+    try {
+      const { data, error } = await supabase.from('reimbursements').delete().eq('id', id).select('id');
+      if (error) throw error; if (!data?.length) throw denied();
+      say('Reimbursement deleted'); await loadFinance(); return true;
+    } catch (e) { return fail(e, 'Could not delete the reimbursement'); }
+  };
   const approveReimb = (id) => updateReimb(id, { status: 'approved' }, undefined, 'Approved');
   const payReimb = (id, account) => updateReimb(id, { status: 'paid' }, account, 'Marked as paid');
   const saveOpening = async (v) => {
@@ -445,10 +453,10 @@ export function AppProvider({ children }) {
 
   return (
     <Ctx.Provider value={{ openLicence: () => setLicence(true), openGarage: () => setGarage(true),
-      alertHue: realRole === 'Captain' ? hue : 38, setAlertHue, preview, previewAlert, celebrate,
+      alertHue: hue, setAlertHue, preview, previewAlert, celebrate,
       me, userId, userName: user.name, role, realRole, setRole, has, ready, financeReady: ready,
       keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
-      txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, approveReimb, payReimb,
+      txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, deleteReimb, approveReimb, payReimb,
       opening, saveOpening, balances, overdue, attention,
       docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, overdueDocs,
       stock, stockLog, addStock, updateStock, deleteStock, adjustStock, receiveReq, reqs, addReq, updateReq, deleteReq, pendingReqs,

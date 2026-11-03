@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Leaderboard from './Leaderboard';
+import { submitScore } from '@/lib/scores';
 
 // PIT STOP. Five red lights come on, then go out. React, then loosen the four wheel nuts in order, 1 to 4.
 // Moving before the lights go out is a false start. Wrong nut: +0.5 s.
@@ -17,6 +19,7 @@ export default function PitStop({ onExit }) {
   const [bad, setBad] = useState(0);
   const [res, setRes] = useState(null);
   const [best, setBest] = useState(read);
+  const [board, setBoard] = useState(0);
   const t0 = useRef(0), tFirst = useRef(0), pen = useRef(0), next = useRef(1), timers = useRef([]);
   const buzz = (p) => { try { navigator.vibrate?.(p); } catch {} };
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
@@ -44,6 +47,7 @@ export default function PitStop({ onExit }) {
       const r = { react: Math.round(tFirst.current - t0.current), pit: Math.round(now - t0.current + pen.current) };
       const b = read(), nb = { react: Math.min(b.react ?? 1e9, r.react), pit: Math.min(b.pit ?? 1e9, r.pit) };
       try { localStorage.setItem('ike-pit-best', JSON.stringify(nb)); } catch {}
+      submitScore('pit', r.pit).then(() => setBoard((x) => x + 1));
       setBest(nb); setRes(r); setPh('done'); buzz([30, 40, 30, 40, 100]);
     }
   };
@@ -71,6 +75,7 @@ export default function PitStop({ onExit }) {
           <div className="m" style={{ marginTop: 6 }}>{rate(res.react)}. Your bests: {best.react ? `${sec(best.react)} s reaction, ${sec(best.pit)} s stop` : 'none yet'}.</div>
         </div>
       )}
+      {(ph === 'idle' || ph === 'done') && <Leaderboard game="pit" fmt={(ms) => `${sec(ms)} s`} refresh={board} />}
       <div className="two" style={{ width: 'min(100%,340px)', marginTop: 'auto' }}>
         {(ph === 'idle' || ph === 'done' || ph === 'jump') && <button className="btn grow" onClick={start}>{ph === 'idle' ? 'START' : 'Go again'}</button>}
         <button className="btn ghost grow" onClick={onExit}>Garage</button>

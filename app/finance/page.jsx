@@ -66,14 +66,14 @@ function TxnSheet({ initial, onClose, onSave }) {
   return (
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? 'Add transaction' : 'Edit transaction'}</h1>
-      <label htmlFor="x1">What for</label><input id="x1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brake pads" />
+      <label htmlFor="x1">What for</label><input id="x1" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="fgrid">
-        <div><label htmlFor="x2">Amount (₹)</label><input id="x2" type="number" inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="6400" /></div>
+        <div><label htmlFor="x2">Amount (₹)</label><input id="x2" type="number" inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} /></div>
         <div><label htmlFor="x3">Type</label><select id="x3" value={type} onChange={(e) => setType(e.target.value)}><option>Expense</option><option>Income</option></select></div>
         <div><label htmlFor="x5">Account</label><select id="x5" value={account} onChange={(e) => setAccount(e.target.value)}>{ACCOUNTS.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}</select></div>
         <div><label htmlFor="x6">Tag</label><select id="x6" value={tag} onChange={(e) => setTag(e.target.value)}>{TAGS.map((t) => <option key={t}>{t}</option>)}</select></div>
       </div>
-      <label htmlFor="x4">Notes (optional)</label><textarea id="x4" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything worth remembering" />
+      <label htmlFor="x4">Notes (optional)</label><textarea id="x4" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
       <Receipt value={receipt} onChange={(u, f) => { setReceipt(u); setReceiptFile(f); }} />
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{isNew ? 'Save transaction' : 'Save changes'}</button></div>
     </Sheet>
@@ -97,7 +97,7 @@ function ReimbSheet({ initial, payAccount, onClose, onSave }) {
     <Sheet onClose={onClose}>
       <h1 className="sh">{isNew ? 'Request reimbursement' : 'Edit reimbursement'}</h1>
       <label htmlFor="r1">Who paid</label><input id="r1" value={who} onChange={(e) => setWho(e.target.value)} />
-      <label htmlFor="r2">What for</label><input id="r2" value={what} onChange={(e) => setWhat(e.target.value)} placeholder="Fuel for test run" />
+      <label htmlFor="r2">What for</label><input id="r2" value={what} onChange={(e) => setWhat(e.target.value)} />
       <div className="fgrid">
         <div><label htmlFor="r3">Amount (₹)</label><input id="r3" type="number" inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} /></div>
         <div><label htmlFor="r4">Tag</label><select id="r4" value={tag} onChange={(e) => setTag(e.target.value)}>{TAGS.map((t) => <option key={t}>{t}</option>)}</select></div>
@@ -119,7 +119,7 @@ function ReimbSheet({ initial, payAccount, onClose, onSave }) {
 }
 
 function ReimbDetail({ r, onClose, onEdit }) {
-  const { has, approveReimb, payReimb } = useApp();
+  const { has, role, approveReimb, payReimb, deleteReimb, canEdit } = useApp();
   const [acc, setAcc] = useState('bank');
   const [label, cls] = STATUS[r.status]; const d = daysSince(r.date);
   return (
@@ -140,6 +140,7 @@ function ReimbDetail({ r, onClose, onEdit }) {
         <button className="btn full" style={{ marginTop: 14 }} onClick={() => { payReimb(r.id, acc); onClose(); }}>Mark as paid</button>
       </>)}
       {has('admin') && <button className="btn ghost full" style={{ marginTop: 10 }} onClick={onEdit}>Edit</button>}
+      {canEdit(r) && (role === 'Captain' || r.status !== 'paid') && <button className="btn ghost full" style={{ marginTop: 10, color: 'var(--red2)' }} onClick={async () => { if (window.confirm('Delete this reimbursement? This cannot be undone.') && await deleteReimb(r.id)) onClose(); }}>Delete</button>}
       <button className="btn ghost full" style={{ marginTop: 10 }} onClick={onClose}>Close</button>
     </Sheet>
   );
@@ -159,7 +160,7 @@ function ExportSheet({ what, count, onPick, onClose }) {
 }
 
 export default function Finance() {
-  const { txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, say, financeReady } = useApp();
+  const { has, txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, say, financeReady } = useApp();
   const [tab, setTab] = useState('tx');
   const [q, setQ] = useState(''); const [f, setF] = useState(DEF); const [showF, setShowF] = useState(false);
   const [adding, setAdding] = useState(false); const [edit, setEdit] = useState(null); const [viewId, setViewId] = useState(null);
@@ -204,11 +205,13 @@ export default function Finance() {
   return (
     <>
       <h1>Finance</h1>
-      <div className="glass bal" style={{ marginTop: 16 }}>
-        <div><div className="m">Income</div><div className="num green"><Money v={inc} /></div></div>
-        <div><div className="m">Expense</div><div className="num redt"><Money v={out} /></div></div>
-        <div><div className="m">Net</div><div className="num"><Money v={inc + out} /></div></div>
-      </div>
+      {has('financeTotals') && (
+        <div className="glass bal" style={{ marginTop: 16 }}>
+          <div><div className="m">Income</div><div className="num green"><Money v={inc} /></div></div>
+          <div><div className="m">Expense</div><div className="num redt"><Money v={out} /></div></div>
+          <div><div className="m">Net</div><div className="num"><Money v={inc + out} /></div></div>
+        </div>
+      )}
 
       <div className="glass seg" style={{ marginTop: 22 }}>
         <button className={tab === 'tx' ? 'on' : ''} onClick={() => setTab('tx')}>Transactions</button>

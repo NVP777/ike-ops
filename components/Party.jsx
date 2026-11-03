@@ -71,7 +71,7 @@ export default function Party() {
     return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf); };
   }, []); // eslint-disable-line
 
-  const rows = [['CHASSIS No.', '001'], ['BUILT BY', 'NAMAN PANPALIA'], ['PIT CREW', 'CLAUDE'], ['SEASON', '2026'], ['INSPECTIONS', String(n).padStart(3, '0')]];
+  const rows = [['CHASSIS No.', '001'], ['BUILT BY', 'NAMAN PANPALIA'], ['PIT CREW', 'CLAUDE 😋'], ['SEASON', '2026'], ['INSPECTIONS', String(n).padStart(3, '0')]];
   return (
     <div ref={root} className="party" onClick={close}>
       <canvas ref={cv} className="party-fx" />

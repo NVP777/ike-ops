@@ -29,8 +29,8 @@ export default function AnnounceSheet() {
   return (
     <Sheet onClose={() => setSheet(null)}>
       <h1 className="sh">New announcement</h1>
-      <label htmlFor="at">Title</label><input id="at" value={t} onChange={(e) => setT(e.target.value)} placeholder="Shakedown moved to 7 pm" />
-      <label htmlFor="ab">Message</label><textarea id="ab" rows={3} value={b} onChange={(e) => setB(e.target.value)} placeholder="What does the team need to know?" />
+      <label htmlFor="at">Title</label><input id="at" value={t} onChange={(e) => setT(e.target.value)} />
+      <label htmlFor="ab">Message</label><textarea id="ab" rows={3} value={b} onChange={(e) => setB(e.target.value)} />
       <label htmlFor="aa">Send to</label>
       <select id="aa" value={a} onChange={(e) => setA(e.target.value)}>{AUDIENCES.map((k) => <option key={k}>{k}</option>)}</select>
       <p className="m" style={{ marginTop: 10 }}>{counts ? `This will notify ${counts[a]} ${counts[a] === 1 ? 'person' : 'people'}.` : 'Counting…'}</p>
