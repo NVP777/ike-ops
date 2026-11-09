@@ -5,6 +5,9 @@ import { PERMS, ACCESS_PAGES, initials } from '@/lib/nav';
 import { buzz } from '@/lib/haptics';
 import Sheet from './Sheet';
 
+// Members without a saved name show a tidy version of their email (e.g. jane.doe -> Jane Doe) until a captain sets one.
+const shown = (m) => m.name && !m.name.includes('@') ? m.name : m.email.split('@')[0].split(/[._-]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+const letters = (m) => initials(shown(m).replace(/[^A-Za-z ]/g, '').trim() || '?') || '?';
 const ROLES = Object.keys(PERMS);
 const TITLES = ['Team Manager', 'Team Lead', 'Vice Captain', 'Treasurer', 'Design Lead', 'Electronics Lead', 'Powertrain Lead'];
 const FILTERS = ['All', ...ROLES];
@@ -61,9 +64,9 @@ export default function TeamManager() {
               onContextMenu={(e) => e.preventDefault()} onClick={() => tap(m.email)}>
               {selecting
                 ? <input type="checkbox" readOnly checked={on} style={{ width: 20, height: 20, accentColor: 'var(--red)', flex: 'none' }} />
-                : <div className="avatar" style={{ cursor: 'inherit', flex: 'none' }}>{initials(m.name)}</div>}
+                : <div className="avatar sm">{letters(m)}</div>}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown(m)}</div>
                 <div className="m">{m.title ? `${m.title} · ` : ''}{m.role}{m.year ? ` · ${m.year}` : ''}</div>
               </div>
               {(m.grants.length > 0 || m.blocks.length > 0) && <span className="tag b">Custom</span>}
@@ -94,16 +97,19 @@ function Access({ m, onClose, savePages }) {
   const [grants, setGrants] = useState(m.grants);
   const [blocks, setBlocks] = useState(m.blocks);
   const [title, setTitle] = useState(m.title);
+  const [name, setName] = useState(m.name && !m.name.includes('@') ? m.name : '');
   const allowed = (p) => (roleHas(p) ? !blocks.includes(p) : grants.includes(p));
   const flip = (p) => {
     if (roleHas(p)) setBlocks((b) => (b.includes(p) ? b.filter((x) => x !== p) : [...b, p]));
     else setGrants((g) => (g.includes(p) ? g.filter((x) => x !== p) : [...g, p]));
   };
-  const dirty = title.trim() !== m.title || JSON.stringify([...grants].sort()) !== JSON.stringify([...m.grants].sort()) || JSON.stringify([...blocks].sort()) !== JSON.stringify([...m.blocks].sort());
+  const dirty = title.trim() !== m.title || name.trim() !== (m.name && !m.name.includes('@') ? m.name : '') || JSON.stringify([...grants].sort()) !== JSON.stringify([...m.grants].sort()) || JSON.stringify([...blocks].sort()) !== JSON.stringify([...m.blocks].sort());
   return (
     <Sheet onClose={onClose}>
-      <h2 style={{ marginTop: 0 }}>{m.name}</h2>
+      <h2 style={{ marginTop: 0 }}>{shown(m)}</h2>
       <div className="m">{m.role}{m.year ? ` · ${m.year}` : ''} · {m.email}</div>
+      <label htmlFor="nm" style={{ marginTop: 14 }}>Name</label>
+      <input id="nm" value={name} maxLength={60} placeholder="Full name" onChange={(e) => setName(e.target.value)} />
       <label htmlFor="ttl" style={{ marginTop: 14 }}>Title (shown on their profile)</label>
       <input id="ttl" list="ttls" value={title} maxLength={40} placeholder="e.g. Team Manager" onChange={(e) => setTitle(e.target.value)} />
       <datalist id="ttls">{TITLES.map((x) => <option key={x} value={x} />)}</datalist>
@@ -114,7 +120,7 @@ function Access({ m, onClose, savePages }) {
           <input type="checkbox" checked={allowed(p.perm)} onChange={() => flip(p.perm)} />
         </label>
       ))}
-      <button className="btn full" style={{ marginTop: 22 }} disabled={!dirty} onClick={async () => { if (await savePages(m.email, grants, blocks, title)) onClose(); }}>Save access</button>
+      <button className="btn full" style={{ marginTop: 22 }} disabled={!dirty} onClick={async () => { if (await savePages(m.email, grants, blocks, title, name)) onClose(); }}>Save access</button>
       <button className="btn ghost full" style={{ marginTop: 10 }} onClick={onClose}>Close</button>
     </Sheet>
   );

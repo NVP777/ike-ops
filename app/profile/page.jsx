@@ -38,7 +38,6 @@ export default function Profile() {
         </div>
         <h2>Tags</h2>
         <div className="m">Every transaction is tagged with one of: {TAGS.join(', ')}.</div>
-        {realRole === 'Captain' && <TeamManager />}
       </>)}
       <h2>Background color<span>Just for you</span></h2>
       <div className="glass pad2">
@@ -52,6 +51,7 @@ export default function Profile() {
       <button className="made" onClick={() => setParty({ k: Date.now() })}>
         Made with <span className="heart">❤️</span> by Naman Panpalia <span className="m"></span>
       </button>
+      {realRole === 'Captain' && <TeamManager />}
       {party && <Party key={party.k} />}
     </>
   );
