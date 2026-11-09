@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { PAGES, PERMS, effectivePerms } from './nav';
+import { PAGES, PERMS, effectivePerms, yearFromEmail } from './nav';
 import { ACCOUNTS, todayISO, daysSince, ago } from './data';
 import { supabase } from './supabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -180,7 +180,7 @@ export function AppProvider({ children }) {
     const dir = {}; const d = await supabase.rpc('team_directory');
     if (!d.error) (d.data || []).forEach((x) => { if (x.full_name) dir[x.email] = x.full_name; });
     const good = (n) => n && !n.includes('@');
-    setTeam(r.data.map((x) => ({ email: x.email, name: good(x.name) ? x.name : dir[(x.email || '').toLowerCase()] || x.email, role: x.role, year: x.year || '', title: x.title || '', grants: x.page_grants || [], blocks: x.page_blocks || [] })));
+    setTeam(r.data.map((x) => ({ email: x.email, name: good(x.name) ? x.name : dir[(x.email || '').toLowerCase()] || x.email, role: x.role, year: x.year || yearFromEmail(x.email), title: x.title || '', grants: x.page_grants || [], blocks: x.page_blocks || [] })));
   }, [realRole]);
   const changeRoles = async (emails, newRole) => {
     try {
