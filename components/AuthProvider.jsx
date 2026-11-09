@@ -35,13 +35,15 @@ export function AuthProvider({ children }) {
       const user = { id: u.id, email, name: u.user_metadata?.full_name || email, avatar: u.user_metadata?.avatar_url || '',
         alertHue: typeof u.user_metadata?.alert_hue === 'number' ? u.user_metadata.alert_hue : null };
       // Is this email on the team list? The database only lets people read their own row here.
-      const { data, error } = await supabase.from('members').select('email,name,role').eq('email', email).maybeSingle();
+      let { data, error } = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').eq('email', email).maybeSingle();
+      // Database not migrated yet (no year / page columns): fall back to the basics.
+      if (error && /year|title|page_grants|page_blocks/.test(error.message || '')) ({ data, error } = await supabase.from('members').select('email,name,role').eq('email', email).maybeSingle());
       if (!alive) return;
       if (error) { setS({ status: 'error', user, member: null, error: error.message }); return; }
       if (!data) { setS({ status: 'denied', user, member: null, error: '' }); return; }
       loadedFor.current = u.id;
       user.name = data.name || user.name;
-      setS({ status: 'in', user, member: data, error: '' });
+      setS({ status: 'in', user, member: { ...data, grants: data.page_grants || [], blocks: data.page_blocks || [] }, error: '' });
       if (fresh.current) {
         fresh.current = false;
         setIgnite(true);

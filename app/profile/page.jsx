@@ -6,9 +6,10 @@ import { ACCOUNTS, TAGS } from '@/lib/data';
 import { useAuth } from '@/components/AuthProvider';
 import Party from '@/components/Party';
 import AlertColor from '@/components/AlertColor';
+import TeamManager from '@/components/TeamManager';
 
 export default function Profile() {
-  const { role, has, opening, saveOpening, alertHue, setAlertHue, previewAlert, openLicence } = useApp();
+  const { role, realRole, myTitle, has, opening, saveOpening, alertHue, setAlertHue, previewAlert, openLicence } = useApp();
   const lastTap = useRef(0);
   const tapCard = () => { const now = Date.now(); if (now - lastTap.current < 350) { lastTap.current = 0; openLicence(); } else lastTap.current = now; };
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function Profile() {
       <h1>Profile</h1>
       <div className="glass idcard" onClick={tapCard} style={{ touchAction: 'manipulation', cursor: 'pointer' }}>
         <div className="avatar big">{initials(user.name)}</div>
-        <div className="num" style={{ fontSize: 28 }}>{user.name}</div><div className="m">{role}</div><div className="m">{user.email}</div>
+        <div className="num" style={{ fontSize: 28 }}>{user.name}</div><div className="m">{myTitle ? `${myTitle} · ` : ''}{role}</div><div className="m">{user.email}</div>
       </div>
       {has('admin') && (<>
         <h2>Settings<span>Captain only</span></h2>
@@ -37,6 +38,7 @@ export default function Profile() {
         </div>
         <h2>Tags</h2>
         <div className="m">Every transaction is tagged with one of: {TAGS.join(', ')}.</div>
+        {realRole === 'Captain' && <TeamManager />}
       </>)}
       <h2>Background color<span>Just for you</span></h2>
       <div className="glass pad2">
