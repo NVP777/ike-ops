@@ -12,3 +12,6 @@ create policy "captain updates members" on members for update
 -- Note: a policy that selects from its own table can recurse. If Supabase complains, move the check into a
 -- security definer function, e.g. create function is_captain() ... and use it in both policies.
 alter table members add column if not exists title text default '';
+
+-- Make the API see the new columns right away (fixes 'column not found in the schema cache').
+notify pgrst, 'reload schema';

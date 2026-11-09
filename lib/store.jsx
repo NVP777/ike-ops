@@ -186,9 +186,9 @@ export function AppProvider({ children }) {
     } catch (e) { return fail(e, 'Could not change the role'); }
   };
   // grants = pages added on top of the role, blocks = pages taken away from it
-  const savePages = async (email, grants, blocks, title) => {
+  const savePages = async (email, grants, blocks, title, name) => {
     try {
-      const { data, error } = await supabase.from('members').update({ page_grants: grants, page_blocks: blocks, title: (title || '').trim() }).eq('email', email).select('email');
+      const { data, error } = await supabase.from('members').update({ page_grants: grants, page_blocks: blocks, title: (title || '').trim(), ...(name?.trim() ? { name: name.trim() } : {}) }).eq('email', email).select('email');
       if (error) throw error; if (!data?.length) throw denied();
       say('Access saved'); await loadTeam(); return true;
     } catch (e) { return fail(e, 'Could not save access'); }

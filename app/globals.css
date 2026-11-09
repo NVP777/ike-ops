@@ -328,3 +328,4 @@ button,input,select,textarea{font-family:inherit}
 .chip{flex:none;background:rgba(255,255,255,.07);border:0;color:var(--mut);padding:8px 14px;border-radius:20px;font:600 13px var(--body);cursor:pointer}
 .chip.on{background:var(--red);color:#fff}
 .row.picked{background:rgba(232,57,47,.1)}
+.avatar.sm{flex:none;display:grid;place-items:center;width:40px;height:40px;min-width:40px;cursor:inherit;font-size:14px;line-height:1;overflow:hidden}
