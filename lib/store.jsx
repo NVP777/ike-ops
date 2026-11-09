@@ -7,6 +7,7 @@ import { useAuth } from '@/components/AuthProvider';
 import Flag from '@/components/Flag';
 import Licence from '@/components/Licence';
 import Garage from '@/components/Garage';
+import { buzz } from './haptics';
 
 const Ctx = createContext(null);
 export const useApp = () => useContext(Ctx);
@@ -197,7 +198,7 @@ export function AppProvider({ children }) {
       const receipt_path = t.receiptFile ? await upload(t.receiptFile, 'finance') : null;
       const { error } = await supabase.from('transactions').insert({ name: t.name, amount: t.amt, txn_date: todayISO(), account: t.account, tag: t.tag, note: t.note || '', receipt_path });
       if (error) throw error;
-      say('Transaction added'); await loadFinance(); return true;
+      buzz([14, 30, 18]); say('Transaction added'); await loadFinance(); return true;
     } catch (e) { return fail(e, 'Could not add the transaction'); }
   };
   const updateTxn = async (id, p) => {
@@ -224,7 +225,7 @@ export function AppProvider({ children }) {
       const receipt_path = r.receiptFile ? await upload(r.receiptFile, 'finance') : null;
       const { error } = await supabase.from('reimbursements').insert({ who: r.who, what: r.for, amount: r.amt, tag: r.tag, note: r.note || '', receipt_path, requested_on: todayISO() });
       if (error) throw error;
-      say('Reimbursement requested'); await loadFinance(); return true;
+      buzz([14, 30, 18]); say('Reimbursement requested'); await loadFinance(); return true;
     } catch (e) { return fail(e, 'Could not send the request'); }
   };
   // One function for every change to a claim (edit, approve, mark paid, undo paid). Captain only.
@@ -285,7 +286,7 @@ export function AppProvider({ children }) {
       await createDoc(d.kind, d, file);
       if (alsoSub) await createDoc('sub', d, file);
       say(alsoSub ? 'Added, and copied to Submissions' : d.kind === 'sub' ? 'Submission added' : 'Document added');
-      await loadDocs(); return true;
+      buzz([14, 30, 18]); await loadDocs(); return true;
     } catch (e) { return fail(e, 'Could not add it'); }
   };
   const updateDoc = async (id, p) => {
@@ -309,7 +310,7 @@ export function AppProvider({ children }) {
       const { error } = await supabase.from('document_versions').insert({ document_id: id, n, file_path: file?.path || null, file_name: file?.name || null,
         file_size: file?.size ?? null, file_type: file?.type || null, link: v.link || '', note: v.note || '', version_date: todayISO() });
       if (error) throw error;
-      say('New version added'); await loadDocs(); return true;
+      buzz([14, 30, 18]); say('New version added'); await loadDocs(); return true;
     } catch (e) { return fail(e, 'Could not add the version'); }
   };
   const toggleDone = async (id) => {
@@ -329,7 +330,7 @@ export function AppProvider({ children }) {
       const photo_path = x.photoFile ? await upload(x.photoFile, 'inventory') : null;
       const { error } = await supabase.from('stock_items').insert({ name: x.name, qty: x.qty, unit: x.unit, min_qty: x.min, tag: x.tag, location: x.loc || '', note: x.note || '', photo_path, item_date: todayISO() });
       if (error) throw error;
-      say('Item added'); await loadInv(); return true;
+      buzz([14, 30, 18]); say('Item added'); await loadInv(); return true;
     } catch (e) { return fail(e, 'Could not add the item'); }
   };
   const updateStock = async (id, p) => {
@@ -361,7 +362,7 @@ export function AppProvider({ children }) {
     try {
       const { error } = await supabase.from('purchase_requests').insert({ name: r.name, qty: r.qty, cost: r.cost, tag: r.tag, note: r.note || '', request_date: todayISO() });
       if (error) throw error;
-      say('Request sent'); await loadInv(); return true;
+      buzz([14, 30, 18]); say('Request sent'); await loadInv(); return true;
     } catch (e) { return fail(e, 'Could not send the request'); }
   };
   const updateReq = async (id, p, msg = 'Changes saved') => {
@@ -411,7 +412,7 @@ export function AppProvider({ children }) {
     try {
       const { error } = await supabase.from('subsystems').insert({ name: s.name, lead: s.lead || '', task: s.task || '', status: s.status, blocked_reason: s.why || '' });
       if (error) throw error;
-      say('Subsystem added'); await loadSubs(); return true;
+      buzz([14, 30, 18]); say('Subsystem added'); await loadSubs(); return true;
     } catch (e) { return fail(e, 'Could not add the subsystem'); }
   };
   const updateSub = async (id, s) => {

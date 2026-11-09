@@ -42,7 +42,7 @@ export default function PitStop({ onExit }) {
     const now = performance.now();
     if (n === 1) tFirst.current = now;
     setNuts((a) => a.map((x) => (x.n === n ? { ...x, done: true } : x)));
-    next.current += 1; buzz(12);
+    next.current += 1;
     if (n === 4) {
       const r = { react: Math.round(tFirst.current - t0.current), pit: Math.round(now - t0.current + pen.current) };
       const b = read(), nb = { react: Math.min(b.react ?? 1e9, r.react), pit: Math.min(b.pit ?? 1e9, r.pit) };
