@@ -1,32 +1,45 @@
--- Run once in the Supabase SQL editor.
-alter table members add column if not exists year text default '';
-alter table members add column if not exists page_grants text[] not null default '{}';
-alter table members add column if not exists page_blocks text[] not null default '{}';
+-- Team manager. Safe to run more than once, in the Supabase SQL editor.
+
+alter table public.members add column if not exists year text default '';
+alter table public.members add column if not exists title text default '';
+alter table public.members add column if not exists page_grants text[] not null default '{}';
+alter table public.members add column if not exists page_blocks text[] not null default '{}';
+
+-- Is the signed-in person a captain? (security definer, so policies on members can use it without recursing)
+create or replace function public.is_captain()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.members m
+    where lower(m.email) = lower((select auth.jwt() ->> 'email')) and m.role = 'Captain'
+  );
+$$;
+revoke all on function public.is_captain() from public, anon;
+grant execute on function public.is_captain() to authenticated;
 
 -- Captains can read and edit every member row.
--- (Adjust if you already have a helper for "is captain"; this one checks the members table.)
-create policy "captain reads all members" on members for select
-  using (exists (select 1 from members m where lower(m.email) = lower(auth.jwt() ->> 'email') and m.role = 'Captain'));
-create policy "captain updates members" on members for update
-  using (exists (select 1 from members m where lower(m.email) = lower(auth.jwt() ->> 'email') and m.role = 'Captain'));
--- Note: a policy that selects from its own table can recurse. If Supabase complains, move the check into a
--- security definer function, e.g. create function is_captain() ... and use it in both policies.
-alter table members add column if not exists title text default '';
+drop policy if exists "captain reads all members" on public.members;
+drop policy if exists "captain updates members" on public.members;
+create policy "captain reads all members" on public.members for select to authenticated
+  using ((select public.is_captain()));
+create policy "captain updates members" on public.members for update to authenticated
+  using ((select public.is_captain())) with check ((select public.is_captain()));
 
--- Make the API see the new columns right away (fixes 'column not found in the schema cache').
-notify pgrst, 'reload schema';
+-- Captains see everyone's Google name.
+create or replace function public.team_directory()
+returns table(email text, full_name text) language sql stable security definer set search_path = '' as $$
+  select lower(u.email)::text, (u.raw_user_meta_data ->> 'full_name')::text
+  from auth.users u where (select public.is_captain());
+$$;
+revoke all on function public.team_directory() from public, anon;
+grant execute on function public.team_directory() to authenticated;
 
--- Names: captains see everyone's Google name; each person's name is also saved to their team row when they sign in.
-create or replace function team_directory() returns table(email text, full_name text)
-language sql security definer set search_path = public, auth as $$
-  select lower(u.email)::text, (u.raw_user_meta_data ->> 'full_name')::text from auth.users u
-  where exists (select 1 from members m where lower(m.email) = lower(auth.jwt() ->> 'email') and m.role = 'Captain');
+-- Each person's Google name is saved to their own team row when they sign in (only if it has no real name yet).
+create or replace function public.sync_my_name(p_name text)
+returns void language sql security definer set search_path = '' as $$
+  update public.members set name = p_name
+  where lower(email) = lower((select auth.jwt() ->> 'email')) and (name is null or name = '' or name like '%@%');
 $$;
-grant execute on function team_directory() to authenticated;
-create or replace function sync_my_name(p_name text) returns void
-language sql security definer set search_path = public as $$
-  update members set name = p_name
-  where lower(email) = lower(auth.jwt() ->> 'email') and (name is null or name = '' or name like '%@%');
-$$;
-grant execute on function sync_my_name(text) to authenticated;
+revoke all on function public.sync_my_name(text) from public, anon;
+grant execute on function public.sync_my_name(text) to authenticated;
+
 notify pgrst, 'reload schema';
