@@ -11,7 +11,7 @@ const head = localFont({ src: '../fonts/osiris.otf', variable: '--font-head' });
 const title = localFont({ src: '../fonts/kreftin.otf', variable: '--font-title' });
 const small = localFont({ src: '../fonts/futura.ttf', variable: '--font-small' });
 
-export const metadata = { title: 'IKE Ops' };
+export const metadata = { title: 'IKE Ops', manifest: '/manifest.webmanifest', icons: { icon: '/icon.svg', apple: '/icon.svg' } };
 export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#060507' };
 
 export default function RootLayout({ children }) {

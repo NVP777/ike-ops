@@ -466,7 +466,16 @@ export function AppProvider({ children }) {
     try {
       const { error } = await supabase.from('notifications').insert({ title, body, audience });
       if (error) throw error;
-      say(`Sent to ${audience}`); await loadNotifs(); return true;
+      // Also send it as a phone notification to everyone in the audience who turned notifications on.
+      let extra = '';
+      try {
+        const { data: s } = await supabase.auth.getSession();
+        const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.session?.access_token}` }, body: JSON.stringify({ title, body, audience }) });
+        const j = await r.json();
+        extra = r.ok ? ` · pushed to ${j.people} of ${j.audience}` : ' · push not sent';
+        if (!r.ok) console.error(j.error);
+      } catch (e) { console.error(e); extra = ' · push not sent'; }
+      say(`Sent to ${audience}${extra}`); await loadNotifs(); return true;
     } catch (e) { return fail(e, 'Could not send the announcement'); }
   };
   const unread = notifs.filter((n) => !n.read).length;
