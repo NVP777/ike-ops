@@ -4,12 +4,13 @@ import { useApp } from '@/lib/store';
 import { initials } from '@/lib/nav';
 import { ACCOUNTS, TAGS } from '@/lib/data';
 import { useAuth } from '@/components/AuthProvider';
+import { pushState, enablePush, disablePush } from '@/lib/push';
 import Party from '@/components/Party';
 import AlertColor from '@/components/AlertColor';
 import TeamManager from '@/components/TeamManager';
 
 export default function Profile() {
-  const { role, realRole, myTitle, has, opening, saveOpening, alertHue, setAlertHue, previewAlert, openLicence } = useApp();
+  const { say, role, realRole, myTitle, has, opening, saveOpening, alertHue, setAlertHue, previewAlert, openLicence } = useApp();
   const lastTap = useRef(0);
   const tapCard = () => { const now = Date.now(); if (now - lastTap.current < 350) { lastTap.current = 0; openLicence(); } else lastTap.current = now; };
   const { user } = useAuth();
@@ -17,6 +18,15 @@ export default function Profile() {
   useEffect(() => { const f = () => setParty(null); window.addEventListener('ike-party-close', f); return () => window.removeEventListener('ike-party-close', f); }, []);
   const [vals, setVals] = useState(() => ({ ...opening }));
   useEffect(() => { setVals({ ...opening }); }, [opening]); // opening balances arrive from the database after the page opens
+  const [pushSt, setPushSt] = useState('');
+  useEffect(() => { pushState().then(setPushSt).catch(() => setPushSt('unsupported')); }, []);
+  const pushMsg = { unsupported: 'This browser cannot show push notifications. On iPhone, add IKE Ops to your Home Screen first, then open it from there.', blocked: 'Notifications are blocked for this site. Allow them in your browser or phone settings.', off: 'Get announcements as a phone notification.', on: 'On. You will get announcements on this device.' };
+  const togglePush = async () => {
+    const was = pushSt;
+    try { if (was === 'on') await disablePush(); else await enablePush(user); say(was === 'on' ? 'Notifications off' : 'Notifications on'); }
+    catch (e) { say(e.message || 'Could not change notifications'); }
+    setPushSt(await pushState());
+  };
   return (
     <>
       <h1>Profile</h1>
@@ -39,6 +49,13 @@ export default function Profile() {
         <h2>Tags</h2>
         <div className="m">Every transaction is tagged with one of: {TAGS.join(', ')}.</div>
       </>)}
+      <h2>Notifications<span>This device</span></h2>
+      <div className="glass pad2">
+        <div className="m" style={{ marginBottom: 12 }}>{pushMsg[pushSt] || '...'}</div>
+        {(pushSt === 'off' || pushSt === 'on') && (
+          <button className={`btn full${pushSt === 'on' ? ' ghost' : ''}`} onClick={togglePush}>{pushSt === 'on' ? 'Turn off notifications' : 'Turn on notifications'}</button>
+        )}
+      </div>
       <h2>Background color<span>Just for you</span></h2>
       <div className="glass pad2">
         <div className="m" style={{ marginBottom: 12 }}>Pick the color of your app background. It is saved to your account and follows you to any device. Drag the ring or pick a preset.</div>

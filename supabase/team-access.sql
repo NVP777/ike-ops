@@ -43,3 +43,18 @@ revoke all on function public.sync_my_name(text) from public, anon;
 grant execute on function public.sync_my_name(text) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- Push notifications: one row per device that turned notifications on.
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  user_id uuid not null default auth.uid(),
+  email text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+drop policy if exists "own push rows" on public.push_subscriptions;
+create policy "own push rows" on public.push_subscriptions for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+notify pgrst, 'reload schema';
