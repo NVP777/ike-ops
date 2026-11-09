@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { PAGES, PERMS } from './nav';
+import { PAGES, PERMS, effectivePerms } from './nav';
 import { ACCOUNTS, todayISO, daysSince, ago } from './data';
 import { supabase } from './supabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -21,7 +21,8 @@ export function AppProvider({ children }) {
   const { user, member } = useAuth();
   const userId = user.id;
   const realRole = member.role;                    // the role the database enforces
-  const can = (p) => PERMS[realRole].includes(p);
+  const myPerms = effectivePerms(realRole, member); // role + this person's added / removed pages
+  const can = (p) => myPerms.includes(p);
   const me = userId;                               // "me" means my user id everywhere ("added by me" filters)
   const [role, setRoleState] = useState(realRole); // the role the screen shows (a captain can preview others)
   const setRole = (r) => { if (realRole === 'Captain') setRoleState(r); };
@@ -38,6 +39,7 @@ export function AppProvider({ children }) {
   const [subs, setSubs] = useState([]);
   const [notifs, setNotifs] = useState([]);
   const [ready, setReady] = useState(false);
+  const [team, setTeam] = useState([]);
 
   const [order, setOrder] = useState([]);
   const [sheet, setSheet] = useState(null); // 'notifs' | 'announce' | 'pages' | null
@@ -63,7 +65,7 @@ export function AppProvider({ children }) {
   useEffect(() => { try { setOrder(JSON.parse(localStorage.getItem('ike-nav')) || []); } catch {} }, []);
   const saveOrder = (o) => { setOrder(o); try { localStorage.setItem('ike-nav', JSON.stringify(o)); } catch {} };
 
-  const has = (p) => PERMS[role].includes(p);
+  const has = (p) => (role === realRole ? myPerms : PERMS[role]).includes(p);
   const navItems = () => {
     const ids = [...order];
     PAGES.forEach((p) => { if (!ids.includes(p.id)) ids.push(p.id); }); // new pages appear automatically
@@ -97,7 +99,7 @@ export function AppProvider({ children }) {
 
   // ---- loaders: each reads one area from the database ----
   const loadFinance = useCallback(async () => {
-    if (!PERMS[realRole].includes('finance')) return;
+    if (!myPerms.includes('finance')) return;
     const [t, r, o] = await Promise.all([
       supabase.from('transactions').select('*').order('txn_date', { ascending: false }).order('created_at', { ascending: false }),
       supabase.from('reimbursements').select('*').order('requested_on', { ascending: false }).order('created_at', { ascending: false }),
@@ -129,7 +131,7 @@ export function AppProvider({ children }) {
   }, []);
 
   const loadInv = useCallback(async () => {
-    if (!PERMS[realRole].includes('inventory')) return;
+    if (!myPerms.includes('inventory')) return;
     const [s, l, r] = await Promise.all([
       supabase.from('stock_items').select('*').order('name'),
       supabase.from('stock_log').select('*').order('created_at', { ascending: false }).limit(1000),
@@ -145,14 +147,14 @@ export function AppProvider({ children }) {
   }, [realRole]);
 
   const loadKeys = useCallback(async () => {
-    if (!PERMS[realRole].includes('boiler')) return;
+    if (!myPerms.includes('boiler')) return;
     const { data, error } = await supabase.from('keys').select('*').order('n');
     if (error) { console.error(error); return; }
     setKeys(data.map((x) => ({ n: x.n, by: x.held_by_name, byId: x.held_by, at: x.taken_at })));
   }, [realRole]);
 
   const loadSubs = useCallback(async () => {
-    if (!PERMS[realRole].includes('tasks')) return;
+    if (!myPerms.includes('tasks')) return;
     const { data, error } = await supabase.from('subsystems').select('*').order('name');
     if (error) { console.error(error); return; }
     setSubs(data.map((x) => ({ id: x.id, name: x.name, lead: x.lead, task: x.task, status: x.status, why: x.blocked_reason, updated: x.updated_at, author: x.author_name, authorId: x.author_id })));
@@ -167,6 +169,31 @@ export function AppProvider({ children }) {
     const seen = new Set((r.data || []).map((x) => x.notification_id));
     setNotifs(n.data.map((x) => ({ id: x.id, t: x.title, b: x.body || 'No details.', w: ago(x.created_at), read: seen.has(x.id), need: null, audience: x.audience, by: x.created_by })));
   }, []);
+
+  // ---- team (captain only) ----
+  const loadTeam = useCallback(async () => {
+    if (realRole !== 'Captain') return;
+    let r = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').order('name');
+    if (r.error) r = await supabase.from('members').select('email,name,role').order('name'); // database not migrated yet
+    if (r.error) { console.error(r.error); return; }
+    setTeam(r.data.map((x) => ({ email: x.email, name: x.name || x.email, role: x.role, year: x.year || '', title: x.title || '', grants: x.page_grants || [], blocks: x.page_blocks || [] })));
+  }, [realRole]);
+  const changeRoles = async (emails, newRole) => {
+    try {
+      const { data, error } = await supabase.from('members').update({ role: newRole }).in('email', emails).select('email');
+      if (error) throw error; if (!data?.length) throw denied();
+      say(`${data.length} member${data.length > 1 ? 's' : ''} now ${newRole}`); await loadTeam(); return true;
+    } catch (e) { return fail(e, 'Could not change the role'); }
+  };
+  // grants = pages added on top of the role, blocks = pages taken away from it
+  const savePages = async (email, grants, blocks, title) => {
+    try {
+      const { data, error } = await supabase.from('members').update({ page_grants: grants, page_blocks: blocks, title: (title || '').trim() }).eq('email', email).select('email');
+      if (error) throw error; if (!data?.length) throw denied();
+      say('Access saved'); await loadTeam(); return true;
+    } catch (e) { return fail(e, 'Could not save access'); }
+  };
+  useEffect(() => { loadTeam().catch((e) => console.error(e)); }, [loadTeam]);
 
   useEffect(() => {
     let on = true;
@@ -455,8 +482,8 @@ export function AppProvider({ children }) {
   return (
     <Ctx.Provider value={{ openLicence: () => setLicence(true), openGarage: () => setGarage(true),
       alertHue: hue, setAlertHue, preview, previewAlert, celebrate,
-      me, userId, userName: user.name, role, realRole, setRole, has, ready, financeReady: ready,
-      keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
+      me, userId, userName: user.name, myTitle: member.title || '', role, realRole, setRole, has, ready, financeReady: ready,
+      team, changeRoles, savePages, keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
       txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, deleteReimb, approveReimb, payReimb,
       opening, saveOpening, balances, overdue, attention,
       docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, overdueDocs,
