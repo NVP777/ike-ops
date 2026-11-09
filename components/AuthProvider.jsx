@@ -43,6 +43,8 @@ export function AuthProvider({ children }) {
       if (!data) { setS({ status: 'denied', user, member: null, error: '' }); return; }
       loadedFor.current = u.id;
       user.name = data.name || user.name;
+      // Remember my Google name on my team row, so captains see it too.
+      if (u.user_metadata?.full_name && (!data.name || data.name.includes('@'))) supabase.rpc('sync_my_name', { p_name: u.user_metadata.full_name }).then(() => {});
       setS({ status: 'in', user, member: { ...data, grants: data.page_grants || [], blocks: data.page_blocks || [] }, error: '' });
       if (fresh.current) {
         fresh.current = false;

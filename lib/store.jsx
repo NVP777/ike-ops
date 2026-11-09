@@ -176,7 +176,11 @@ export function AppProvider({ children }) {
     let r = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').order('name');
     if (r.error) r = await supabase.from('members').select('email,name,role').order('name'); // database not migrated yet
     if (r.error) { console.error(r.error); return; }
-    setTeam(r.data.map((x) => ({ email: x.email, name: x.name || x.email, role: x.role, year: x.year || '', title: x.title || '', grants: x.page_grants || [], blocks: x.page_blocks || [] })));
+    // Google names for everyone who has signed in (captain-only database function; fine if it is missing).
+    const dir = {}; const d = await supabase.rpc('team_directory');
+    if (!d.error) (d.data || []).forEach((x) => { if (x.full_name) dir[x.email] = x.full_name; });
+    const good = (n) => n && !n.includes('@');
+    setTeam(r.data.map((x) => ({ email: x.email, name: good(x.name) ? x.name : dir[(x.email || '').toLowerCase()] || x.email, role: x.role, year: x.year || '', title: x.title || '', grants: x.page_grants || [], blocks: x.page_blocks || [] })));
   }, [realRole]);
   const changeRoles = async (emails, newRole) => {
     try {
