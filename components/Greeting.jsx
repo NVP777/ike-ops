@@ -7,7 +7,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 // "Good evening, Naman" plus one line about what needs you right now.
 export default function Greeting() {
-  const { has, keys, me, reimbs, overdue, overdueDocs, pendingReqs } = useApp();
+  const { realRole, has, keys, me, reimbs, overdue, overdueDocs, pendingReqs } = useApp();
   const { user } = useAuth();
   const first = (user.name || '').trim().split(/\s+/)[0] || 'there';
 
@@ -25,7 +25,7 @@ export default function Greeting() {
 
   return (
     <div className="greet">
-      <div className="greet-hi">{hello(new Date().getHours())}, <b>{first}</b></div>
+      <div className="greet-hi">{hello(new Date().getHours())}, <b>{first}</b>{realRole === 'Captain' && <span title="Captain"> 🫡</span>}</div>
       <div className="m">{line}</div>
     </div>
   );
