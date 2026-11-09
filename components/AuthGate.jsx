@@ -1,5 +1,6 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Party from './Party';
 import { usePathname } from 'next/navigation';
 import { AppProvider } from '@/lib/store';
 import AppShell from './AppShell';
@@ -22,6 +23,8 @@ function Google() {
 
 function Login() {
   const { signIn, authError } = useAuth();
+  const [party, setParty] = useState(null);
+  useEffect(() => { const f = () => setParty(null); window.addEventListener('ike-party-close', f); return () => window.removeEventListener('ike-party-close', f); }, []);
   useEffect(() => { const i = new Image(); i.src = CAR; }, []); // warm the cache so the intro starts instantly
   // Only when testing over Wi-Fi: show the exact address Supabase has to allow.
   const lan = window.location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -32,6 +35,10 @@ function Login() {
       <div className="auth-tag">Inspired Karters, BITS Pilani. Operations portal.</div>
       <button className="gbtn" onClick={signIn}><Google />Continue with Google</button>
       <div className="m">Only approved team members can enter.</div>
+      <button className="made" onClick={() => setParty({ k: Date.now() })}>
+        Made with <span className="heart">❤️</span> by Naman Panpalia
+      </button>
+      {party && <Party key={party.k} />}
       {authError && <div className="err" role="alert">{authError}</div>}
       {lan && <div className="m" style={{ fontSize: 11, opacity: 0.6, maxWidth: 320 }}>Testing address: {window.location.origin}. Add both {window.location.origin} and {window.location.origin}/** to the Redirect URLs in Supabase.</div>}
     </div>
