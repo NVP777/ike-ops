@@ -17,7 +17,7 @@ export const SHADER = {
 };
 
 export default function ShaderBg() {
-  // alertHue: each person's chosen background color (38 is the amber default). preview: speeds the animation up while picking.
+  // alertHue: each person's chosen background color (0 is the logo red default). preview: speeds the animation up while picking.
   const { alertHue, preview } = useApp();
   return (
     <div className={`shader${preview ? ' fast' : ''}`} aria-hidden="true" style={{ filter: `hue-rotate(${alertHue}deg)` }}>

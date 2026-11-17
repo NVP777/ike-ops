@@ -47,8 +47,8 @@ export function AppProvider({ children }) {
   const [flag, setFlag] = useState(null);
   const [licence, setLicence] = useState(false); // double-tap your profile
   const [garage, setGarage] = useState(false);   // hold the IKE logo
-  // Background color: a hue (0 to 359, 38 = amber, the default) each person picks. Saved on their account, so it follows them to any device.
-  const [hue, setHue] = useState(typeof user.alertHue === 'number' ? user.alertHue : 38);
+  // Background color: a hue rotation (0 to 359, 0 = the IKE logo red, the default) each person picks. Saved on their account, so it follows them to any device.
+  const [hue, setHue] = useState(typeof user.alertHue === 'number' ? user.alertHue : 0);
   const [preview, setPreview] = useState(false);
   const saveTimer = useRef(null), previewTimer = useRef(null), queued = useRef({});
   const previewAlert = () => {

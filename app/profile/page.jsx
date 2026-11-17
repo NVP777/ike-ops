@@ -77,7 +77,7 @@ export default function Profile() {
         <AlertColor hue={alertHue} onChange={setAlertHue} />
         <div className="two" style={{ marginTop: 16 }}>
           <button className="btn ghost grow" onClick={previewAlert}>Preview</button>
-          <button className="btn ghost grow" onClick={() => setAlertHue(38)}>Reset to amber</button>
+          <button className="btn ghost grow" onClick={() => setAlertHue(0)}>Reset to red</button>
         </div>
       </div>
       <button className="made" onClick={() => setParty({ k: Date.now() })}>

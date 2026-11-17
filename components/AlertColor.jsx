@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
 
-const SWATCHES = [['Amber', 38], ['Green', 135], ['Cyan', 185], ['Blue', 215], ['Violet', 270], ['Pink', 320]];
+const SWATCHES = [['Red', 0], ['Amber', 38], ['Green', 135], ['Cyan', 185], ['Blue', 215], ['Violet', 270], ['Pink', 320]];
 
 // Drag around the ring to pick a hue (0 to 359). The background shifts from red to that hue.
 export default function AlertColor({ hue, onChange }) {
