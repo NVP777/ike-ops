@@ -38,7 +38,9 @@ export async function POST(req) {
     const { data: subs } = emails.length ? await admin.from('push_subscriptions').select('endpoint,p256dh,auth,email').in('email', emails) : { data: [] };
 
     setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:admin@example.com', pub, priv);
-    const payload = JSON.stringify({ title, body: body || '', url: '/' });
+    const validId = typeof notificationId === 'string' && /^[0-9a-f-]{36}$/i.test(notificationId);
+    // Tapping the notification opens the app with the announcements list showing.
+    const payload = JSON.stringify({ title, body: body || '', url: validId ? `/?notif=${notificationId}` : '/' });
     let sent = 0; const dead = []; const failed = []; const reached = new Set();
     await Promise.all((subs || []).map(async (s) => {
       try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; reached.add((s.email || '').toLowerCase()); }

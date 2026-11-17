@@ -9,7 +9,8 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
-    for (const c of cs) if ('focus' in c) return c.focus();
+    // App already open: bring it forward and tell it to show the announcements. Otherwise open it at the right address.
+    for (const c of cs) if ('focus' in c) { c.postMessage({ type: 'open-notif' }); return c.focus(); }
     return self.clients.openWindow(url);
   }));
 });

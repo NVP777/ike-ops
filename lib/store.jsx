@@ -210,6 +210,18 @@ export function AppProvider({ children }) {
   };
   useEffect(() => { loadTeam().catch((e) => console.error(e)); }, [loadTeam]);
 
+  // Tapping a push notification opens the announcements list: from a fresh start (?notif=...) or while the app is already open.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.has('notif')) {
+      setSheet('notifs'); q.delete('notif');
+      window.history.replaceState({}, '', window.location.pathname + (q.toString() ? `?${q}` : ''));
+    }
+    const onMsg = (e) => { if (e.data?.type === 'open-notif') setSheet('notifs'); };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg);
+  }, []);
+
   useEffect(() => {
     let on = true;
     const safe = (f) => f().catch((e) => console.error(e));
@@ -254,11 +266,9 @@ export function AppProvider({ children }) {
   };
   const deleteTxn = async (id) => {
     try {
-      const t = txns.find((x) => x.id === id);
-      // Deleting a reimbursement payment puts its claim back to approved.
-      if (t?.reimbId) { const r = await supabase.from('reimbursements').update({ status: 'approved' }).eq('id', t.reimbId); if (r.error) throw r.error; }
-      const { data, error } = await supabase.from('transactions').delete().eq('id', id).select('id');
-      if (error) throw error; if (!data?.length) throw denied();
+      // One database step: deleting a reimbursement payment also puts its claim back to approved, or neither happens.
+      const { error } = await supabase.rpc('delete_transaction', { p_id: id });
+      if (error) throw error;
       say('Transaction deleted'); await loadFinance(); return true;
     } catch (e) { return fail(e, 'Could not delete'); }
   };
@@ -314,19 +324,17 @@ export function AppProvider({ children }) {
   };
 
   // ---- documents and submissions ----
-  const createDoc = async (kind, d, file) => {
-    const { data, error } = await supabase.from('documents').insert({ kind, title: d.title, description: d.desc || '', tag: d.tag, due_date: d.due || null, doc_date: todayISO() }).select('id').single();
+  // The document and its first version are created in one database step, so you never get a document with no version.
+  const createDocs = async (kinds, d, file) => {
+    const { error } = await supabase.rpc('create_documents', { p_kinds: kinds, p_title: d.title, p_desc: d.desc || '', p_tag: d.tag, p_due: d.due || null, p_today: todayISO(),
+      p_file_path: file?.path || null, p_file_name: file?.name || null, p_file_size: file?.size ?? null, p_file_type: file?.type || null, p_link: d.link || '' });
     if (error) throw error;
-    const v = await supabase.from('document_versions').insert({ document_id: data.id, n: 1, file_path: file?.path || null, file_name: file?.name || null,
-      file_size: file?.size ?? null, file_type: file?.type || null, link: d.link || '', note: 'First version', version_date: todayISO() });
-    if (v.error) { await supabase.from('documents').delete().eq('id', data.id); throw v.error; }
   };
   // alsoSub: also create an independent copy in Submissions (the tick box on a new document).
   const addDoc = async (d, alsoSub = false) => {
     try {
       const file = d.file?.raw ? { path: await upload(d.file.raw, 'documents'), name: d.file.name, size: d.file.size, type: d.file.type } : null;
-      await createDoc(d.kind, d, file);
-      if (alsoSub) await createDoc('sub', d, file);
+      await createDocs(alsoSub ? [d.kind, 'sub'] : [d.kind], d, file);
       say(alsoSub ? 'Added, and copied to Submissions' : d.kind === 'sub' ? 'Submission added' : 'Document added');
       buzz([14, 30, 18]); await loadDocs(); return true;
     } catch (e) { return fail(e, 'Could not add it'); }
@@ -347,10 +355,10 @@ export function AppProvider({ children }) {
   };
   const addVersion = async (id, v) => {
     try {
-      const n = (docs.find((d) => d.id === id)?.versions[0]?.n || 0) + 1;
       const file = v.file?.raw ? { path: await upload(v.file.raw, 'documents'), name: v.file.name, size: v.file.size, type: v.file.type } : null;
-      const { error } = await supabase.from('document_versions').insert({ document_id: id, n, file_path: file?.path || null, file_name: file?.name || null,
-        file_size: file?.size ?? null, file_type: file?.type || null, link: v.link || '', note: v.note || '', version_date: todayISO() });
+      // The database picks the next number under a lock, so two people adding at once cannot get the same one.
+      const { error } = await supabase.rpc('add_document_version', { p_doc: id, p_today: todayISO(), p_file_path: file?.path || null, p_file_name: file?.name || null,
+        p_file_size: file?.size ?? null, p_file_type: file?.type || null, p_link: v.link || '', p_note: v.note || '' });
       if (error) throw error;
       buzz([14, 30, 18]); say('New version added'); await loadDocs(); return true;
     } catch (e) { return fail(e, 'Could not add the version'); }

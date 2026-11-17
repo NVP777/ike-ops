@@ -5,6 +5,7 @@ import { initials } from '@/lib/nav';
 import { ACCOUNTS, TAGS } from '@/lib/data';
 import { useAuth } from '@/components/AuthProvider';
 import { pushState, enablePush, disablePush } from '@/lib/push';
+import { supabase } from '@/lib/supabase';
 import Party from '@/components/Party';
 import AlertColor from '@/components/AlertColor';
 import TeamManager from '@/components/TeamManager';
@@ -21,6 +22,14 @@ export default function Profile() {
   const [pushSt, setPushSt] = useState('');
   useEffect(() => { pushState().then(setPushSt).catch(() => setPushSt('unsupported')); }, []);
   const pushMsg = { unsupported: 'This browser cannot show push notifications. On iPhone, add IKE Ops to your Home Screen first, then open it from there.', blocked: 'Notifications are blocked for this site. Allow them in your browser or phone settings.', off: 'Get announcements as a phone notification.', on: 'On. You will get announcements on this device.' };
+  const cleanFiles = async () => {
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      const r = await fetch('/api/cleanup', { method: 'POST', headers: { Authorization: `Bearer ${s.session?.access_token || ''}` } });
+      const j = await r.json();
+      say(r.ok ? `Checked ${j.checked} files, removed ${j.removed}` : (j.error || 'Cleanup failed'));
+    } catch { say('Cleanup failed'); }
+  };
   const togglePush = async () => {
     const was = pushSt;
     try { if (was === 'on') await disablePush(); else await enablePush(user); say(was === 'on' ? 'Notifications off' : 'Notifications on'); }
@@ -46,6 +55,12 @@ export default function Profile() {
           ))}
           <button className="btn full" style={{ marginTop: 18 }} onClick={() => saveOpening(vals)}>Save changes</button>
         </div>
+        {realRole === 'Captain' && (
+          <div className="glass pad2" style={{ marginTop: 12 }}>
+            <div className="m" style={{ marginBottom: 10 }}>Replaced or deleted receipts, photos and documents stay in storage. This removes files nothing uses any more (older than a day). It also runs weekly.</div>
+            <button className="btn ghost full" onClick={cleanFiles}>Clean up unused files</button>
+          </div>
+        )}
         <h2>Tags</h2>
         <div className="m">Every transaction is tagged with one of: {TAGS.join(', ')}.</div>
       </>)}
