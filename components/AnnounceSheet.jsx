@@ -4,7 +4,7 @@ import Sheet from './Sheet';
 import { useApp } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 
-const AUDIENCES = ['Everyone', 'ExComm', 'Management', 'Tech'];
+const AUDIENCES = ['Everyone', 'Captain', 'ExComm', 'Management', 'Tech'];
 
 // Replaces the old announcement sheet: it sends to a real audience and shows how many real people will see it.
 export default function AnnounceSheet() {

@@ -30,6 +30,7 @@ export async function POST(req) {
     if (me?.role !== 'Captain') return Response.json({ error: 'Only a captain can send announcements.' }, { status: 403 });
 
     // Everyone in the chosen audience who has turned notifications on.
+    if (audience != null && !['Everyone', 'Captain', 'ExComm', 'Management', 'Tech'].includes(audience)) return Response.json({ error: 'Bad request' }, { status: 400 });
     let q = admin.from('members').select('email');
     if (audience && audience !== 'Everyone') q = q.eq('role', audience);
     const { data: members } = await q;
