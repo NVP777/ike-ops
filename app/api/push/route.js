@@ -39,13 +39,13 @@ export async function POST(req) {
 
     setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:admin@example.com', pub, priv);
     const payload = JSON.stringify({ title, body: body || '', url: '/' });
-    let sent = 0; const dead = [];
+    let sent = 0; const dead = []; const failed = [];
     await Promise.all((subs || []).map(async (s) => {
       try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; }
-      catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(s.endpoint); else console.error('push failed', e.statusCode, e.body); }
+      catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(s.endpoint); else { failed.push(e.statusCode || 'network'); console.error('push failed', e.statusCode, e.body); } }
     }));
     if (dead.length) await admin.from('push_subscriptions').delete().in('endpoint', dead);
-    return Response.json({ sent, devices: (subs || []).length, people: new Set((subs || []).map((s) => s.email)).size, audience: emails.length });
+    return Response.json({ sent, expired: dead.length, failed, devices: (subs || []).length, people: new Set((subs || []).map((s) => s.email)).size, audience: emails.length });
   } catch (e) {
     console.error(e);
     return Response.json({ error: 'Could not send push notifications.' }, { status: 500 });

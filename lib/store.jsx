@@ -483,7 +483,10 @@ export function AppProvider({ children }) {
         const { data: s } = await supabase.auth.getSession();
         const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.session?.access_token}` }, body: JSON.stringify({ title, body, audience }) });
         const j = await r.json();
-        extra = r.ok ? ` · pushed to ${j.people} of ${j.audience}` : ' · push not sent';
+        extra = r.ok
+          ? (j.devices === 0 ? ` · nobody in this group has notifications on (${j.audience} members)`
+            : ` · delivered to ${j.sent} of ${j.devices} device${j.devices === 1 ? '' : 's'}${j.expired ? `, ${j.expired} expired` : ''}${j.failed?.length ? `, failed: ${j.failed.join('/')}` : ''}`)
+          : ` · push not sent (${r.status})`;
         if (!r.ok) console.error(j.error);
       } catch (e) { console.error(e); extra = ' · push not sent'; }
       say(`Sent to ${audience}${extra}`); await loadNotifs(); return true;
