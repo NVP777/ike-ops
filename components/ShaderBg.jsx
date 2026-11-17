@@ -17,10 +17,10 @@ export const SHADER = {
 };
 
 export default function ShaderBg() {
-  // alertHue: each person's chosen background color (0 is the logo red default). preview: speeds the animation up while picking.
+  // alertHue: each person's chosen background color (10 is the default, a softer red with a touch of orange). The saturate and brightness values make every color a little easier on the eyes. preview: speeds the animation up while picking.
   const { alertHue, preview } = useApp();
   return (
-    <div className={`shader${preview ? ' fast' : ''}`} aria-hidden="true" style={{ filter: `hue-rotate(${alertHue}deg)` }}>
+    <div className={`shader${preview ? ' fast' : ''}`} aria-hidden="true" style={{ filter: `hue-rotate(${alertHue}deg) saturate(.8) brightness(1.2)` }}>
       <Canvas style={{ position: 'absolute', inset: 0 }} pixelDensity={0.75} fov={40}>
         <Gradient control="props" {...SHADER} />
       </Canvas>
