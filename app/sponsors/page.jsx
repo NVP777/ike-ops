@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Sheet from '@/components/Sheet';
 import CarLoader from '@/components/CarLoader';
 import { useApp } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 
 const PAGE = 40;
 const link = (u) => { const t = (u || '').trim(); if (!t) return ''; return /^https?:\/\//i.test(t) ? t : `https://${t}`; };
@@ -27,8 +28,9 @@ export default function Sponsors() {
   // Reads the Sheet now, then again every 30 seconds, so changes made in the Sheet appear here.
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      fetch('/api/sponsors', { cache: 'no-store' })
+    const load = async () => {
+      const { data: ses } = await supabase.auth.getSession();
+      return fetch('/api/sponsors', { cache: 'no-store', headers: { Authorization: `Bearer ${ses.session?.access_token || ''}` } })
         .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
         .then(({ ok, j }) => {
           if (!alive) return;
@@ -36,6 +38,7 @@ export default function Sponsors() {
           setRows(j.rows); setAt(new Date()); setErr('');
         })
         .catch((e) => { if (alive) setErr(e.message || 'Could not load the sponsor sheet.'); });
+    };
     load();
     const t = setInterval(load, 30000);
     return () => { alive = false; clearInterval(t); };

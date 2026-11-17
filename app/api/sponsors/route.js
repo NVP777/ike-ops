@@ -1,5 +1,7 @@
 // Reads the sponsor Sheet as CSV. It works because the Sheet is shared as "Anyone with the link: Viewer".
 // No Google account, service account, or API key is needed. The app never writes to the Sheet.
+import { createClient } from '@supabase/supabase-js';
+
 export const dynamic = 'force-dynamic';
 
 const norm = (s) => String(s || '').split('(')[0].toLowerCase().replace(/[^a-z]/g, '');
@@ -23,8 +25,22 @@ function parseCsv(text) {
   return rows;
 }
 
-export async function GET() {
+// Only signed-in team members (an email on the members list) may read the sponsor data.
+async function isMember(req) {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer /i, '');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!token || !url || !anon) return false;
+  const sb = createClient(url, anon, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } });
+  const { data: u } = await sb.auth.getUser(token);
+  const email = (u?.user?.email || '').toLowerCase();
+  if (!email) return false;
+  const { data } = await sb.from('members').select('email').eq('email', email).maybeSingle();
+  return !!data;
+}
+
+export async function GET(req) {
   try {
+    if (!(await isMember(req))) return Response.json({ error: 'Sign in with a team account to see sponsors.' }, { status: 401 });
     const id = process.env.GOOGLE_SHEET_ID;
     if (!id) throw new Error('GOOGLE_SHEET_ID is not set.');
 
@@ -48,7 +64,6 @@ export async function GET() {
     return Response.json({ rows, updated: new Date().toISOString() });
   } catch (e) {
     console.error('Sponsor sheet read failed:', e?.message);
-        if (!rows.length) return Response.json({ rows, headers: head, firstRow: body[0] || [] });
-    return Response.json({ rows, updated: new Date().toISOString() });
+    return Response.json({ error: 'Could not read the sponsor sheet.' }, { status: 500 });
   }
 }

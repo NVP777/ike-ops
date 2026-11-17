@@ -12,13 +12,19 @@ export async function POST(req) {
     if (!service || !pub || !priv) return Response.json({ error: 'Push is not configured on the server.' }, { status: 501 });
 
     const token = (req.headers.get('authorization') || '').replace(/^Bearer /i, '');
-    const { title, body, audience } = await req.json();
-    if (!token || !title) return Response.json({ error: 'Bad request' }, { status: 400 });
+    if (!token) return Response.json({ error: 'Not signed in.' }, { status: 401 });
 
-    // Who is calling? Check their token, then check they are a captain in the members table.
+    // Who is calling? Check their token first, before reading anything else from the request.
     const asUser = createClient(url, anon, { auth: { persistSession: false } });
     const { data: u } = await asUser.auth.getUser(token);
     const email = (u?.user?.email || '').toLowerCase();
+    if (!email) return Response.json({ error: 'Not signed in.' }, { status: 401 });
+
+    let parsed;
+    try { parsed = await req.json(); } catch { return Response.json({ error: 'Bad request' }, { status: 400 }); }
+    const { title, body, audience } = parsed || {};
+    if (typeof title !== 'string' || !title.trim() || title.length > 120 || (body != null && (typeof body !== 'string' || body.length > 500))) return Response.json({ error: 'Bad request' }, { status: 400 });
+
     const admin = createClient(url, service, { auth: { persistSession: false } });
     const { data: me } = email ? await admin.from('members').select('role').eq('email', email).maybeSingle() : { data: null };
     if (me?.role !== 'Captain') return Response.json({ error: 'Only a captain can send announcements.' }, { status: 403 });
