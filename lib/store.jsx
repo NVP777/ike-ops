@@ -475,13 +475,13 @@ export function AppProvider({ children }) {
   // ---- announcements ----
   const pushAnnouncement = async (title, body, audience) => {
     try {
-      const { error } = await supabase.from('notifications').insert({ title, body, audience });
+      const { data: created, error } = await supabase.from('notifications').insert({ title, body, audience }).select('id').single();
       if (error) throw error;
       // Also send it as a phone notification to everyone in the audience who turned notifications on.
       let extra = '';
       try {
         const { data: s } = await supabase.auth.getSession();
-        const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.session?.access_token}` }, body: JSON.stringify({ title, body, audience }) });
+        const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.session?.access_token}` }, body: JSON.stringify({ title, body, audience, notificationId: created?.id }) });
         const j = await r.json();
         extra = r.ok
           ? (j.devices === 0 ? ` · nobody in this group has notifications on (${j.audience} members)`
@@ -491,6 +491,20 @@ export function AppProvider({ children }) {
       } catch (e) { console.error(e); extra = ' · push not sent'; }
       say(`Sent to ${audience}${extra}`); await loadNotifs(); return true;
     } catch (e) { return fail(e, 'Could not send the announcement'); }
+  };
+  // Captain only (the database enforces it). Removes the announcement for everyone.
+  const deleteNotif = async (id) => {
+    try {
+      const { data, error } = await supabase.from('notifications').delete().eq('id', id).select('id');
+      if (error) throw error; if (!data?.length) throw denied();
+      say('Announcement deleted'); await loadNotifs(); return true;
+    } catch (e) { return fail(e, 'Could not delete the announcement'); }
+  };
+  // Who the push reached: [{ email, status }] with status delivered | failed | not_enabled. Empty for older announcements.
+  const loadDelivery = async (id) => {
+    const { data, error } = await supabase.from('notification_recipients').select('email,status').eq('notification_id', id);
+    if (error) { console.error(error); return null; }
+    return data || [];
   };
   const unread = notifs.filter((n) => !n.read).length;
   const markRead = async () => {
@@ -515,7 +529,7 @@ export function AppProvider({ children }) {
       opening, saveOpening, balances, overdue, attention,
       docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, overdueDocs,
       stock, stockLog, addStock, updateStock, deleteStock, adjustStock, receiveReq, reqs, addReq, updateReq, deleteReq, pendingReqs,
-      notifs, unread, markRead, pushAnnouncement, order, saveOrder, navItems, sheet, setSheet, toast, say }}>
+      notifs, unread, markRead, pushAnnouncement, deleteNotif, loadDelivery, order, saveOrder, navItems, sheet, setSheet, toast, say }}>
       {children}
       {flag && <Flag key={flag.id} label={flag.label} onDone={() => setFlag(null)} />}
       {licence && <Licence user={user} role={realRole} onClose={() => setLicence(false)} />}

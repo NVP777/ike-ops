@@ -22,7 +22,7 @@ export async function POST(req) {
 
     let parsed;
     try { parsed = await req.json(); } catch { return Response.json({ error: 'Bad request' }, { status: 400 }); }
-    const { title, body, audience } = parsed || {};
+    const { title, body, audience, notificationId } = parsed || {};
     if (typeof title !== 'string' || !title.trim() || title.length > 120 || (body != null && (typeof body !== 'string' || body.length > 500))) return Response.json({ error: 'Bad request' }, { status: 400 });
 
     const admin = createClient(url, service, { auth: { persistSession: false } });
@@ -39,12 +39,19 @@ export async function POST(req) {
 
     setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:admin@example.com', pub, priv);
     const payload = JSON.stringify({ title, body: body || '', url: '/' });
-    let sent = 0; const dead = []; const failed = [];
+    let sent = 0; const dead = []; const failed = []; const reached = new Set();
     await Promise.all((subs || []).map(async (s) => {
-      try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; }
+      try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; reached.add((s.email || '').toLowerCase()); }
       catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(s.endpoint); else { failed.push(e.statusCode || 'network'); console.error('push failed', e.statusCode, e.body); } }
     }));
     if (dead.length) await admin.from('push_subscriptions').delete().in('endpoint', dead);
+
+    // Remember who it reached, so a captain can see who got it and who did not.
+    if (typeof notificationId === 'string' && /^[0-9a-f-]{36}$/i.test(notificationId)) {
+      const hadDevice = new Set((subs || []).map((s) => (s.email || '').toLowerCase()));
+      const rows = emails.map((e) => ({ notification_id: notificationId, email: e, status: reached.has(e) ? 'delivered' : hadDevice.has(e) ? 'failed' : 'not_enabled' }));
+      if (rows.length) { const { error: re } = await admin.from('notification_recipients').upsert(rows, { onConflict: 'notification_id,email' }); if (re) console.error('delivery log failed', re.message); }
+    }
     return Response.json({ sent, expired: dead.length, failed, devices: (subs || []).length, people: new Set((subs || []).map((s) => s.email)).size, audience: emails.length });
   } catch (e) {
     console.error(e);
