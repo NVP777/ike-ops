@@ -57,7 +57,7 @@ export default function Profile() {
         </div>
         {realRole === 'Captain' && (
           <div className="glass pad2" style={{ marginTop: 12 }}>
-            <div className="m" style={{ marginBottom: 10 }}>Replaced or deleted receipts, photos and documents stay in storage. This removes files nothing uses any more (older than a day). It also runs weekly.</div>
+            <div className="m" style={{ marginBottom: 10 }}>Replaced or deleted receipts, photos and documents stay in storage. This removes files no one uses any more (older than a day). It also runs weekly.</div>
             <button className="btn ghost full" onClick={cleanFiles}>Clean up unused files</button>
           </div>
         )}
