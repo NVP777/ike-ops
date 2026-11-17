@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { PERMS, initials } from '@/lib/nav';
 
 // Double-tap your profile: your IKE Super Licence. Move over it to tilt it, tap it to flip it.
-const LABEL = { finance: 'Finance', sponsors: 'Sponsors', boiler: 'Boiler room', inventory: 'Inventory', tasks: 'Subsystems', announce: 'Announcements', admin: 'Admin' };
+const LABEL = { finance: 'Finance', sponsors: 'Sponsors', inventory: 'Inventory', announce: 'Announcements', admin: 'Admin' };
 const hash = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
 
 export default function Licence({ user, role, onClose }) {

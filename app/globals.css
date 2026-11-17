@@ -329,3 +329,60 @@ button,input,select,textarea{font-family:inherit}
 .chip.on{background:var(--red);color:#fff}
 .row.picked{background:rgba(232,57,47,.1)}
 .avatar.sm{flex:none;display:grid;place-items:center;width:40px;height:40px;min-width:40px;cursor:inherit;font-size:14px;line-height:1;overflow:hidden}
+/* Home page layout (phones: one column) */
+.home-grid{display:block}
+.notes{padding:4px 18px 8px}
+.notes .row{align-items:flex-start}
+.notes-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+/* Laptop and desktop: top navigation bar with every tab, wide content column, home as a two-column dashboard, dialogs in the centre. */
+@media (min-width:900px){
+  body{font-size:16px}
+  #app{max-width:none}
+  #view{padding:0 max(32px,calc(50% - 600px)) 80px;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+  #view::-webkit-scrollbar{display:block;width:8px}
+  #view::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:4px}
+  header{position:sticky;top:0;z-index:6;height:84px;padding:0}
+  header::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);z-index:-1;background:rgba(8,6,7,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .logo{font-size:48px}
+  .bell,.avatar{width:46px;height:46px}
+  .hr{gap:14px}
+  h1{font-size:64px;margin-top:36px}
+  h1.sh{font-size:34px;margin-top:0}
+  h2{font-size:28px;margin-top:40px}
+  .greet{margin:18px 0 8px} .greet-hi{font-size:44px}
+  .sub{font-size:17px}
+  .m{font-size:17px}
+  .glass{background:var(--glass);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .glass.seg{border-radius:14px}
+  .pad{padding:4px 26px} .pad2{padding:10px 26px 24px}
+  .row{padding:18px 0} .row.click:hover{background:rgba(255,255,255,.04)}
+  .btn{padding:11px 20px;font-size:15px}
+  .btn,.chip{transition:filter .15s,background .15s} .btn:hover{filter:brightness(1.12)} .btn.ghost:hover{background:rgba(255,255,255,.07)}
+  .bal{grid-template-columns:repeat(3,1fr);padding:6px 8px}
+  .bal>div{flex-direction:column;align-items:flex-start;gap:12px;border-top:0;border-left:1px solid var(--line);padding:20px 24px}
+  .bal>div:first-child{border-left:0}
+  .bal .num{font-size:40px}
+  .stats{flex-direction:row;gap:16px}
+  .stat{flex:1;padding:20px 22px}
+  .fgrid{grid-template-columns:repeat(4,1fr)}
+  .alert{font-size:15px}
+  /* home dashboard: balances and alerts on the left, notifications on the right */
+  .home-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:40px;align-items:start}
+  .home-side{position:sticky;top:104px}
+  .home-side h2{margin-top:40px}
+  /* top navigation bar: all tabs at once, centred in the header */
+  #dock,#dock.hide{left:50%;top:14px;bottom:auto;transform:translateX(-50%);width:auto;max-width:calc(100vw - 440px);height:56px;border-radius:30px;z-index:7;transition:none;box-shadow:0 6px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.16)}
+  #nav{flex-direction:row;overflow:visible;scroll-snap-type:none;padding:6px;gap:4px;height:100%;align-items:center}
+  #nav a{flex:none;padding:0;font:600 15px var(--body);text-align:left}
+  #nav a b{display:inline-block;font-size:21px;line-height:1;margin-right:10px;vertical-align:-2px}
+  #nav .it{display:flex;align-items:center;padding:0 22px;height:44px;border-radius:24px;white-space:nowrap}
+  #nav a:hover:not(.on) .it{background:rgba(255,255,255,.08)}
+  /* dialogs */
+  .sheet{align-items:center;padding:24px}
+  .sheet>div{max-width:600px;max-height:88vh;border-radius:22px;padding:28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .pbox{width:290px;top:58px}
+  .toast{bottom:32px}
+  .rcpt{max-height:340px}
+  .auth-logo{font-size:84px}
+}
+@media (max-width:1180px) and (min-width:900px){ #nav .it{padding:0 14px} #nav a b{margin-right:6px} }

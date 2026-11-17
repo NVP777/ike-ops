@@ -35,8 +35,6 @@ export function AppProvider({ children }) {
   const [stock, setStock] = useState([]);
   const [stockLog, setStockLog] = useState([]);
   const [reqs, setReqs] = useState([]);
-  const [keys, setKeys] = useState([]);
-  const [subs, setSubs] = useState([]);
   const [notifs, setNotifs] = useState([]);
   const [ready, setReady] = useState(false);
   const [team, setTeam] = useState([]);
@@ -146,20 +144,6 @@ export function AppProvider({ children }) {
       author: x.author_name, authorId: x.author_id, date: x.request_date })));
   }, [realRole]);
 
-  const loadKeys = useCallback(async () => {
-    if (!myPerms.includes('boiler')) return;
-    const { data, error } = await supabase.from('keys').select('*').order('n');
-    if (error) { console.error(error); return; }
-    setKeys(data.map((x) => ({ n: x.n, by: x.held_by_name, byId: x.held_by, at: x.taken_at })));
-  }, [realRole]);
-
-  const loadSubs = useCallback(async () => {
-    if (!myPerms.includes('tasks')) return;
-    const { data, error } = await supabase.from('subsystems').select('*').order('name');
-    if (error) { console.error(error); return; }
-    setSubs(data.map((x) => ({ id: x.id, name: x.name, lead: x.lead, task: x.task, status: x.status, why: x.blocked_reason, updated: x.updated_at, author: x.author_name, authorId: x.author_id })));
-  }, [realRole]);
-
   const loadNotifs = useCallback(async () => {
     const [n, r] = await Promise.all([
       supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(100),
@@ -225,9 +209,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     let on = true;
     const safe = (f) => f().catch((e) => console.error(e));
-    Promise.all([loadFinance, loadDocs, loadInv, loadKeys, loadSubs, loadNotifs].map(safe)).finally(() => { if (on) setReady(true); });
+    Promise.all([loadFinance, loadDocs, loadInv, loadNotifs].map(safe)).finally(() => { if (on) setReady(true); });
     return () => { on = false; };
-  }, [loadFinance, loadDocs, loadInv, loadKeys, loadSubs, loadNotifs]);
+  }, [loadFinance, loadDocs, loadInv, loadNotifs]);
 
   // When anyone changes something, everyone's screen refreshes. (Refreshes are grouped, so a burst of changes reloads once.)
   useEffect(() => {
@@ -238,12 +222,10 @@ export function AppProvider({ children }) {
     if (can('finance')) { on('transactions', loadFinance); on('reimbursements', loadFinance); on('settings', loadFinance); }
     on('documents', loadDocs); on('document_versions', loadDocs);
     if (can('inventory')) { on('stock_items', loadInv); on('stock_log', loadInv); on('purchase_requests', loadInv); }
-    if (can('boiler')) on('keys', loadKeys);
-    if (can('tasks')) on('subsystems', loadSubs);
     on('notifications', loadNotifs);
     ch.subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [realRole, loadFinance, loadDocs, loadInv, loadKeys, loadSubs, loadNotifs]); // eslint-disable-line
+  }, [realRole, loadFinance, loadDocs, loadInv, loadNotifs]); // eslint-disable-line
 
   // Every write below returns true when it worked, so a form can stay open (and keep what was typed) when it fails.
   // ---- finance ----
@@ -274,7 +256,8 @@ export function AppProvider({ children }) {
   };
   const addReimb = async (r) => {
     try {
-      const receipt_path = r.receiptFile ? await upload(r.receiptFile, 'finance') : null;
+      if (!r.receiptFile) throw new Error('Attach a photo of the receipt');
+      const receipt_path = await upload(r.receiptFile, 'finance');
       const { error } = await supabase.from('reimbursements').insert({ who: r.who, what: r.for, amount: r.amt, tag: r.tag, note: r.note || '', receipt_path, requested_on: todayISO() });
       if (error) throw error;
       buzz([14, 30, 18]); say('Reimbursement requested'); await loadFinance(); return true;
@@ -447,39 +430,6 @@ export function AppProvider({ children }) {
   };
   const pendingReqs = reqs.filter((r) => r.status === 'requested').length;
 
-  // ---- boiler room keys ----
-  const claimKey = async (n) => {
-    try { const { error } = await supabase.rpc('claim_key', { p_n: n }); if (error) throw error; say(`Key ${n} claimed`); await loadKeys(); return true; }
-    catch (e) { await loadKeys(); return fail(e, 'Could not claim the key'); }
-  };
-  const releaseKey = async (n) => {
-    try { const { error } = await supabase.rpc('release_key', { p_n: n }); if (error) throw error; say(`Key ${n} released`); await loadKeys(); return true; }
-    catch (e) { await loadKeys(); return fail(e, 'Could not release the key'); }
-  };
-
-  // ---- subsystems ----
-  const addSub = async (s) => {
-    try {
-      const { error } = await supabase.from('subsystems').insert({ name: s.name, lead: s.lead || '', task: s.task || '', status: s.status, blocked_reason: s.why || '' });
-      if (error) throw error;
-      buzz([14, 30, 18]); say('Subsystem added'); await loadSubs(); return true;
-    } catch (e) { return fail(e, 'Could not add the subsystem'); }
-  };
-  const updateSub = async (id, s) => {
-    try {
-      const { data, error } = await supabase.from('subsystems').update({ name: s.name, lead: s.lead || '', task: s.task || '', status: s.status, blocked_reason: s.why || '' }).eq('id', id).select('id');
-      if (error) throw error; if (!data?.length) throw denied();
-      say('Saved'); await loadSubs(); return true;
-    } catch (e) { return fail(e, 'Could not save'); }
-  };
-  const deleteSub = async (id) => {
-    try {
-      const { data, error } = await supabase.from('subsystems').delete().eq('id', id).select('id');
-      if (error) throw error; if (!data?.length) throw denied();
-      say('Subsystem deleted'); await loadSubs(); return true;
-    } catch (e) { return fail(e, 'Could not delete'); }
-  };
-
   // ---- announcements ----
   const pushAnnouncement = async (title, body, audience) => {
     try {
@@ -532,7 +482,7 @@ export function AppProvider({ children }) {
     <Ctx.Provider value={{ openLicence: () => setLicence(true), openGarage: () => setGarage(true),
       alertHue: hue, setAlertHue, preview, previewAlert, celebrate,
       me, userId, userName: user.name, myTitle: member.title || '', role, realRole, setRole, has, ready, financeReady: ready,
-      team, changeRoles, savePages, addMember, keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
+      team, changeRoles, savePages, addMember, 
       txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, deleteReimb, approveReimb, payReimb,
       opening, saveOpening, balances, overdue, attention,
       docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, overdueDocs,

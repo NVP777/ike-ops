@@ -7,7 +7,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 // "Good evening, Naman" plus one line about what needs you right now.
 export default function Greeting() {
-  const { realRole, has, keys, me, reimbs, overdue, overdueDocs, pendingReqs } = useApp();
+  const { realRole, has, reimbs, overdue, overdueDocs, pendingReqs } = useApp();
   const { user } = useAuth();
   const first = (user.name || '').trim().split(/\s+/)[0] || 'there';
 
@@ -19,8 +19,6 @@ export default function Greeting() {
   }
   const late = (has('finance') ? overdue : 0) + overdueDocs;
   if (late) bits.push(`${late} overdue`);
-  const mine = has('boiler') ? keys.find((k) => k.byId === me) : null;
-  if (mine) bits.push(`you have key ${mine.n}`);
   const line = bits.length ? `${bits.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'You have nothing pending right now. 🏁';
 
   return (

@@ -39,10 +39,10 @@ function printPdf(title, sub, head, rows, foot) {
   return true;
 }
 
-function Receipt({ value, onChange }) {
+function Receipt({ value, onChange, required }) {
   return (
     <>
-      <label htmlFor="rc">Receipt photo (optional)</label>
+      <label htmlFor="rc">{required ? 'Receipt photo (required)' : 'Receipt photo (optional)'}</label>
       <input id="rc" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(URL.createObjectURL(f), f); }} />
       {value && <img className="rcpt" src={value} alt="Receipt preview" />}
     </>
@@ -90,6 +90,7 @@ function ReimbSheet({ initial, payAccount, onClose, onSave }) {
   const [status, setStatus] = useState(initial?.status || 'requested'); const [acc, setAcc] = useState(payAccount || 'bank');
   const save = () => {
     if (!who.trim() || !what.trim() || !+amt) return say('Fill in who, what for, and the amount');
+    if (!receiptFile && !receipt) return say('Attach a photo of the receipt');
     const base = { who: who.trim(), for: what.trim(), amt: Math.abs(+amt), tag, note: note.trim(), receiptFile };
     onSave(isNew ? base : { ...base, status }, acc);
   };
@@ -112,7 +113,7 @@ function ReimbSheet({ initial, payAccount, onClose, onSave }) {
         <div className="m" style={{ marginTop: 8 }}>Moving a claim out of Paid removes the expense that was recorded for it.</div>
       </>)}
       <label htmlFor="r5">Notes (optional)</label><textarea id="r5" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
-      <Receipt value={receipt} onChange={(u, f) => { setReceipt(u); setReceiptFile(f); }} />
+      <Receipt required value={receipt} onChange={(u, f) => { setReceipt(u); setReceiptFile(f); }} />
       <div className="two"><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn grow" onClick={save}>{isNew ? 'Send request' : 'Save changes'}</button></div>
     </Sheet>
   );
