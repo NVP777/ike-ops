@@ -330,7 +330,18 @@ button,input,select,textarea{font-family:inherit}
 .row.picked{background:rgba(232,57,47,.1)}
 .avatar.sm{flex:none;display:grid;place-items:center;width:40px;height:40px;min-width:40px;cursor:inherit;font-size:14px;line-height:1;overflow:hidden}
 /* Home page layout (phones: one column) */
-.home-grid{display:block}
+.home-grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "side" "bal"}
+.home-top{grid-area:top} .home-side{grid-area:side} .home-bal{grid-area:bal}
+.home-side h2{margin-top:22px}
+/* Phone: a bigger bottom navigation */
+@media (max-width:899px){
+  #dock{width:min(calc(100% - 20px),560px);border-radius:38px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  #nav{padding:10px 0}
+  #nav a{font-size:14px}
+  #nav a b{font-size:38px;line-height:1.2}
+  #nav .it{padding:10px 2px}
+  #view{padding-bottom:160px}
+}
 .notes{padding:4px 18px 8px}
 .notes .row{align-items:flex-start}
 .notes-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -367,7 +378,7 @@ button,input,select,textarea{font-family:inherit}
   .fgrid{grid-template-columns:repeat(4,1fr)}
   .alert{font-size:15px}
   /* home dashboard: balances and alerts on the left, notifications on the right */
-  .home-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:40px;align-items:start}
+  .home-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);grid-template-areas:"top side" "bal side";grid-template-rows:auto 1fr;column-gap:40px;align-items:start}
   .home-side{position:sticky;top:104px}
   .home-side h2{margin-top:40px}
   /* top navigation bar: all tabs at once, centred in the header */

@@ -19,12 +19,15 @@ export default function Home() {
     <>
       <h1>Pit wall</h1><div className="sub">{role} view</div>
       <div className="home-grid">
-      <div className="home-main">
+      <div className="home-top">
       <Greeting />
       {has('finance') && overdue > 0 && <div className="alert r">{overdue} reimbursement{overdue > 1 ? 's' : ''} pending for over 30 days.</div>}
       {overdueDocs > 0 && <div className="alert r">{overdueDocs} item{overdueDocs > 1 ? 's' : ''} in Documents past deadline.</div>}
       {has('inventory') && pendingReqs > 0 && <div className="alert">{pendingReqs} inventory request{pendingReqs > 1 ? 's are' : ' is'} waiting for approval.</div>}
 
+      </div>
+
+      <div className="home-bal">
       {has('financeTotals') && (<>
         <h2>Balances</h2>
         <div className="glass bal">{balances.map((b) => (<div key={b.id}><div className="m">{b.label}</div><div className="num green"><Money v={b.value} /></div></div>))}</div>
