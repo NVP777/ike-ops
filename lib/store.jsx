@@ -189,6 +189,17 @@ export function AppProvider({ children }) {
       say(`${data.length} member${data.length > 1 ? 's' : ''} now ${newRole}`); await loadTeam(); return true;
     } catch (e) { return fail(e, 'Could not change the role'); }
   };
+  // Give someone access: add their email and role to the members list. The database only lets a captain do this.
+  const addMember = async (rawEmail, newRole) => {
+    try {
+      const email = (rawEmail || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address');
+      if (!PERMS[newRole]) throw new Error('Pick a role');
+      const { error } = await supabase.from('members').insert({ email, role: newRole });
+      if (error) throw (error.code === '23505' ? new Error('That email is already on the team') : error);
+      say(`${email} added as ${newRole}`); await loadTeam(); return true;
+    } catch (e) { return fail(e, 'Could not add the member'); }
+  };
   // grants = pages added on top of the role, blocks = pages taken away from it
   const savePages = async (email, grants, blocks, title, name) => {
     try {
@@ -496,7 +507,7 @@ export function AppProvider({ children }) {
     <Ctx.Provider value={{ openLicence: () => setLicence(true), openGarage: () => setGarage(true),
       alertHue: hue, setAlertHue, preview, previewAlert, celebrate,
       me, userId, userName: user.name, myTitle: member.title || '', role, realRole, setRole, has, ready, financeReady: ready,
-      team, changeRoles, savePages, keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
+      team, changeRoles, savePages, addMember, keys, claimKey, releaseKey, subs, addSub, updateSub, deleteSub,
       txns, addTxn, updateTxn, deleteTxn, canEdit, reimbs, addReimb, updateReimb, deleteReimb, approveReimb, payReimb,
       opening, saveOpening, balances, overdue, attention,
       docs, addDoc, updateDoc, deleteDoc, addVersion, toggleDone, overdueDocs,

@@ -13,7 +13,10 @@ const TITLES = ['Team Manager', 'Team Lead', 'Vice Captain', 'Treasurer', 'Desig
 const FILTERS = ['All', ...ROLES];
 
 export default function TeamManager() {
-  const { team, changeRoles, savePages } = useApp();
+  const { team, changeRoles, savePages, addMember } = useApp();
+  const [adding, setAdding] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState('Tech');
   const [filter, setFilter] = useState('All');
   const [picked, setPicked] = useState([]);      // emails selected with long press
   const [open, setOpen] = useState(null);        // email of the member whose access is shown
@@ -40,6 +43,7 @@ export default function TeamManager() {
     <>
       <h2>Team<span>{team.length} members</span></h2>
       <div className="glass pad2">
+        <button className="btn full" style={{ marginBottom: 10 }} onClick={() => setAdding(true)}>Add member</button>
         <div className="chips">
           {FILTERS.map((f) => (
             <button key={f} className={`chip${filter === f ? ' on' : ''}`} onClick={() => setFilter(f)}>{f}</button>
@@ -74,6 +78,22 @@ export default function TeamManager() {
           );
         })}
       </div>
+
+      {adding && (
+        <Sheet onClose={() => setAdding(false)}>
+          <h2 style={{ marginTop: 0 }}>Add member</h2>
+          <div className="m" style={{ marginBottom: 12 }}>They can sign in with this BITS email and will get this role. Anyone not on the list sees no data.</div>
+          <label htmlFor="ne">Email</label>
+          <input id="ne" type="email" value={newEmail} maxLength={120} autoCapitalize="none" autoCorrect="off" placeholder="f2024xxxx@pilani.bits-pilani.ac.in" onChange={(e) => setNewEmail(e.target.value)} />
+          <label style={{ marginTop: 14 }}>Role</label>
+          <div className="chips">
+            {ROLES.map((r) => <button key={r} className={`chip${newRole === r ? ' on' : ''}`} onClick={() => setNewRole(r)}>{r}</button>)}
+          </div>
+          <button className="btn full" style={{ marginTop: 22 }} disabled={!newEmail.trim()}
+            onClick={async () => { if (await addMember(newEmail, newRole)) { setNewEmail(''); setAdding(false); } }}>Add to team</button>
+          <button className="btn ghost full" style={{ marginTop: 10 }} onClick={() => setAdding(false)}>Cancel</button>
+        </Sheet>
+      )}
 
       {roleSheet && (
         <Sheet onClose={() => setRoleSheet(false)}>
