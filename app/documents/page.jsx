@@ -191,6 +191,7 @@ export default function Documents() {
           <div style={{ whiteSpace: 'pre-wrap' }}>{vd.desc || <span className="m">No description.</span>}</div>
 
           <div className="m" style={{ margin: '18px 0 6px' }}>Current version (v{cur?.n})</div>
+          {cur?.note && cur.note !== 'First version' && <div style={{ whiteSpace: 'pre-wrap', marginBottom: 10 }}>{cur.note}</div>}
           {!cur?.file && !cur?.link && <span className="m">Nothing attached yet.</span>}
           {cur?.file && (<>
             <div>{cur.file.name} <span className="m">({fmtSize(cur.file.size)})</span></div>
