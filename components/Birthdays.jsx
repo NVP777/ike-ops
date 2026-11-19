@@ -79,8 +79,8 @@ function Card({ p, wishes, reload }) {
   return (
     <div className="glass pad2" style={{ marginBottom: 12 }}>
       {boom && <Confetti onDone={() => setBoom(false)} />}
-      <div className="t" style={{ fontSize: 18 }}>{mine ? `🎂 Happy birthday, ${nm}!` : `🏁 ${nm} is in the pit lane today. It's their birthday.`}</div>
-      <div className="m" style={{ margin: '4px 0 10px' }}>{mine ? 'Lights out on a new year. The whole team is cheering for you.' : 'Lights out on another lap around the sun.'}</div>
+      <div className="t" style={{ fontSize: 18 }}>{mine ? `🎂 Happy birthday, ${nm}!` : `🎂 It's ${nm}'s birthday today`}</div>
+      <div className="m" style={{ margin: '4px 0 10px' }}>{mine ? 'The whole team is cheering for you.' : 'Send a wish and leave a note on their card.'}</div>
       {all.length > 0 && <div className="m" style={{ marginBottom: 10 }}><b>{all.length} wish{all.length === 1 ? '' : 'es'}</b>{mine || all.length <= 8 ? `: ${who.join(', ')}` : ''}</div>}
       {lines.length > 0 && (
         <div style={{ marginBottom: 10 }}>
