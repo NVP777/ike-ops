@@ -31,14 +31,6 @@ export default function Profile() {
       say(r.ok ? `Checked ${j.checked} files, removed ${j.removed}` : (j.error || 'Cleanup failed'));
     } catch { say('Cleanup failed'); }
   };
-  const testBirthday = async () => {
-    try {
-      const { data: s } = await supabase.auth.getSession();
-      const r = await fetch('/api/birthday-push', { method: 'POST', headers: { Authorization: `Bearer ${s.session?.access_token || ''}` } });
-      const j = await r.json();
-      say(r.ok ? `Sent ${j.sent} test notifications` : (j.error || 'Test failed'));
-    } catch { say('Test failed'); }
-  };
   const togglePush = async () => {
     const was = pushSt;
     try { if (was === 'on') await disablePush(); else await enablePush(user); say(was === 'on' ? 'Notifications off' : 'Notifications on'); }
@@ -68,12 +60,6 @@ export default function Profile() {
           <div className="glass pad2" style={{ marginTop: 12 }}>
             <div className="m" style={{ marginBottom: 10 }}>Replaced or deleted receipts, photos and documents stay in storage. This removes files no one uses any more (older than a day). It also runs weekly.</div>
             <button className="btn ghost full" onClick={cleanFiles}>Clean up unused files</button>
-          </div>
-        )}
-        {realRole === 'Captain' && (
-          <div className="glass pad2" style={{ marginTop: 12 }}>
-            <div className="m" style={{ marginBottom: 10 }}>Sends you two sample birthday notifications: one as the birthday person, one as everyone else.</div>
-            <button className="btn ghost full" onClick={testBirthday}>Send me a test birthday notification</button>
           </div>
         )}
         <h2>Tags</h2>
