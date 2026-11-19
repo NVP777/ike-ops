@@ -10,7 +10,7 @@ export function NotifItem({ n, onGone, timeStyle }) {
   const { realRole, team, deleteNotif, loadDelivery } = useApp();
   const [open, setOpen] = useState(false);
   const [det, setDet] = useState(undefined); // undefined = not loaded, null = none recorded, else rows
-  const isCaptain = realRole === 'Captain';
+  const isCaptain = realRole === 'ExComm';
   const nameOf = (email) => { const m = (team || []).find((x) => x.email === email); return m && m.name && !m.name.includes('@') ? m.name : email; };
   const group = (rows, s) => rows.filter((r) => r.status === s).map((r) => nameOf(r.email)).sort();
   const toggle = async () => {

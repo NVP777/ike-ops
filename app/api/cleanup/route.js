@@ -19,7 +19,7 @@ async function allowed(req, admin, url, anon) {
   const email = (u?.user?.email || '').toLowerCase();
   if (!email) return false;
   const { data: me } = await admin.from('members').select('role').eq('email', email).maybeSingle();
-  return me?.role === 'Captain';
+  return me?.role === 'ExComm';
 }
 
 async function column(admin, table, col) {
@@ -37,7 +37,7 @@ async function handle(req) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, service = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !anon || !service) return Response.json({ error: 'Not configured on the server.' }, { status: 501 });
     const admin = createClient(url, service, { auth: { persistSession: false } });
-    if (!(await allowed(req, admin, url, anon))) return Response.json({ error: 'Only a captain can do this.' }, { status: 401 });
+    if (!(await allowed(req, admin, url, anon))) return Response.json({ error: 'Only ExComm can do this.' }, { status: 401 });
     const dry = new URL(req.url).searchParams.get('dry') === '1';
 
     // Every path a row still uses. If any lookup fails we abort rather than risk deleting a file that is in use.

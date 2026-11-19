@@ -25,7 +25,7 @@ export function AppProvider({ children }) {
   const can = (p) => myPerms.includes(p);
   const me = userId;                               // "me" means my user id everywhere ("added by me" filters)
   const [role, setRoleState] = useState(realRole); // the role the screen shows (a captain can preview others)
-  const setRole = (r) => { if (realRole === 'Captain') setRoleState(r); };
+  const setRole = (r) => { if (realRole === 'ExComm') setRoleState(r); };
 
   // ---- real data, all loaded from the database. Nothing here is sample data. ----
   const [txns, setTxns] = useState([]);
@@ -78,7 +78,7 @@ export function AppProvider({ children }) {
     return false;
   };
   // Author edits and deletes their own entries. Captain can edit and delete everything. (The database enforces this too.)
-  const canEdit = (t) => role === 'Captain' || t.authorId === userId;
+  const canEdit = (t) => role === 'ExComm' || t.authorId === userId;
 
   const upload = async (file, folder) => {
     const ext = ((file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin').slice(0, 8);
@@ -156,7 +156,7 @@ export function AppProvider({ children }) {
 
   // ---- team (captain only) ----
   const loadTeam = useCallback(async () => {
-    if (realRole !== 'Captain') return;
+    if (realRole !== 'ExComm') return;
     let r = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').order('name');
     if (r.error) r = await supabase.from('members').select('email,name,role').order('name'); // database not migrated yet
     if (r.error) { console.error(r.error); return; }

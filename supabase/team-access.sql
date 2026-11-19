@@ -10,7 +10,7 @@ create or replace function public.is_captain()
 returns boolean language sql stable security definer set search_path = '' as $$
   select exists (
     select 1 from public.members m
-    where lower(m.email) = lower((select auth.jwt() ->> 'email')) and m.role = 'Captain'
+    where lower(m.email) = lower((select auth.jwt() ->> 'email')) and m.role = 'ExComm'
   );
 $$;
 revoke all on function public.is_captain() from public, anon;

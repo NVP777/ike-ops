@@ -45,7 +45,7 @@ export default function Profile() {
         <div className="num" style={{ fontSize: 28 }}>{user.name}</div><div className="m">{myTitle ? `${myTitle} · ` : ''}{role}</div><div className="m">{user.email}</div>
       </div>
       {has('admin') && (<>
-        <h2>Settings<span>Captain only</span></h2>
+        <h2>Settings<span>ExComm only</span></h2>
         <div className="glass pad2">
           <label htmlFor="fy">Financial year</label><input id="fy" defaultValue="2025-26" />
           {ACCOUNTS.map((a) => (
@@ -56,7 +56,7 @@ export default function Profile() {
           ))}
           <button className="btn full" style={{ marginTop: 18 }} onClick={() => saveOpening(vals)}>Save changes</button>
         </div>
-        {realRole === 'Captain' && (
+        {realRole === 'ExComm' && (
           <div className="glass pad2" style={{ marginTop: 12 }}>
             <div className="m" style={{ marginBottom: 10 }}>Replaced or deleted receipts, photos and documents stay in storage. This removes files no one uses any more (older than a day). It also runs weekly.</div>
             <button className="btn ghost full" onClick={cleanFiles}>Clean up unused files</button>
@@ -94,7 +94,7 @@ export default function Profile() {
       <button className="made" onClick={() => setParty({ k: Date.now() })}>
         Made with <span className="heart">❤️</span> by Naman Panpalia <span className="m"></span>
       </button>
-      {realRole === 'Captain' && <TeamManager />}
+      {realRole === 'ExComm' && <TeamManager />}
       {party && <Party key={party.k} />}
     </>
   );

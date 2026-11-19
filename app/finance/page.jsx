@@ -141,7 +141,7 @@ function ReimbDetail({ r, onClose, onEdit }) {
         <button className="btn full" style={{ marginTop: 14 }} onClick={() => { payReimb(r.id, acc); onClose(); }}>Mark as paid</button>
       </>)}
       {has('admin') && <button className="btn ghost full" style={{ marginTop: 10 }} onClick={onEdit}>Edit</button>}
-      {canEdit(r) && (role === 'Captain' || r.status !== 'paid') && <button className="btn ghost full" style={{ marginTop: 10, color: 'var(--red2)' }} onClick={async () => { if (window.confirm('Delete this reimbursement? This cannot be undone.') && await deleteReimb(r.id)) onClose(); }}>Delete</button>}
+      {canEdit(r) && (role === 'ExComm' || r.status !== 'paid') && <button className="btn ghost full" style={{ marginTop: 10, color: 'var(--red2)' }} onClick={async () => { if (window.confirm('Delete this reimbursement? This cannot be undone.') && await deleteReimb(r.id)) onClose(); }}>Delete</button>}
       <button className="btn ghost full" style={{ marginTop: 10 }} onClick={onClose}>Close</button>
     </Sheet>
   );

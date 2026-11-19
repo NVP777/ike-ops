@@ -30,7 +30,7 @@ export default function Greeting({ birthdayName = '' }) {
 
   return (
     <div className="greet">
-      <div className="greet-hi">{hello(new Date().getHours())}, <b>{first}</b>{realRole === 'Captain' && <span title="Captain"> 🫡</span>}</div>
+      <div className="greet-hi">{hello(new Date().getHours())}, <b>{first}</b>{realRole === 'ExComm' && <span title="ExComm"> 🫡</span>}</div>
       <div className="m">{line}</div>
     </div>
   );

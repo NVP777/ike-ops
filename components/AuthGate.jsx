@@ -52,7 +52,7 @@ function Denied() {
     <div className="auth">
       <div className="auth-logo">IKE</div>
       <div className="t" style={{ fontSize: 18 }}>This account isn’t on the team list</div>
-      <div className="m" style={{ maxWidth: 320 }}>You signed in as {user.email}. Ask the captain to add that email, or sign in with a different Google account.</div>
+      <div className="m" style={{ maxWidth: 320 }}>You signed in as {user.email}. Ask an ExComm member to add that email, or sign in with a different Google account.</div>
       <button className="gbtn" onClick={signOut}>Use a different account</button>
     </div>
   );

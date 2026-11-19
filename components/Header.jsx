@@ -46,7 +46,7 @@ export default function Header() {
               <div className="t">{user.name}</div>
               <div className="m">{realRole}{role !== realRole ? `, viewing as ${role}` : ''}</div>
               <div className="m" style={{ wordBreak: 'break-all' }}>{user.email}</div>
-              {realRole === 'Captain' && (<>
+              {realRole === 'ExComm' && (<>
                 <div className="m" style={{ marginTop: 14 }}>View the app as</div>
                 <div className="who">{Object.keys(PERMS).map((r) => (
                   <button key={r} className="btn ghost" style={r === role ? { borderColor: 'var(--red)' } : {}} onClick={() => setRole(r)}>{r}</button>
