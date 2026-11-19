@@ -9,12 +9,13 @@ import { supabase } from '@/lib/supabase';
 import Party from '@/components/Party';
 import AlertColor from '@/components/AlertColor';
 import TeamManager from '@/components/TeamManager';
+import BirthdayFields, { MONTHS } from '@/components/BirthdayFields';
 
 export default function Profile() {
   const { say, role, realRole, myTitle, has, opening, saveOpening, alertHue, setAlertHue, previewAlert, openLicence } = useApp();
   const lastTap = useRef(0);
   const tapCard = () => { const now = Date.now(); if (now - lastTap.current < 350) { lastTap.current = 0; openLicence(); } else lastTap.current = now; };
-  const { user } = useAuth();
+  const { user, member, saveBirthday } = useAuth();
   const [party, setParty] = useState(null);
   useEffect(() => { const f = () => setParty(null); window.addEventListener('ike-party-close', f); return () => window.removeEventListener('ike-party-close', f); }, []);
   const [vals, setVals] = useState(() => ({ ...opening }));
@@ -71,6 +72,16 @@ export default function Profile() {
           <button className={`btn full${pushSt === 'on' ? ' ghost' : ''}`} onClick={togglePush}>{pushSt === 'on' ? 'Turn off notifications' : 'Turn on notifications'}</button>
         )}
       </div>
+      {member && member.birthday_asked !== undefined && (<>
+        <h2>Birthday<span>Optional</span></h2>
+        <div className="glass pad2">
+          <div className="m" style={{ marginBottom: 12 }}>{member.birth_month ? `Saved: ${member.birth_day} ${MONTHS[member.birth_month - 1]}.` : 'Not added. Day and month only, no year.'}</div>
+          <BirthdayFields key={`${member.birth_month}-${member.birth_day}`} month={member.birth_month} day={member.birth_day}
+            saveLabel={member.birth_month ? 'Update birthday' : 'Add birthday'}
+            onSave={async (mo, d) => { const e = await saveBirthday(mo, d); say(e ? 'Could not save birthday' : 'Birthday saved'); return e; }}
+            onSkip={member.birth_month ? async () => { const e = await saveBirthday(null, null); say(e ? 'Could not remove birthday' : 'Birthday removed'); return e; } : undefined} skipLabel="Remove" />
+        </div>
+      </>)}
       <h2>Background color<span>Just for you</span></h2>
       <div className="glass pad2">
         <div className="m" style={{ marginBottom: 12 }}>Pick the color of your app background. It is saved to your account and follows you to any device. Drag the ring or pick a preset.</div>

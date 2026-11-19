@@ -7,6 +7,7 @@ import AppShell from './AppShell';
 import { useAuth } from './AuthProvider';
 import Ignition from './Ignition';
 import CarLoader from './CarLoader';
+import BirthdayAsk from './BirthdayAsk';
 
 const CAR = '/ike-car.svg';
 
@@ -92,5 +93,5 @@ export default function AuthGate({ children }) {
   if (status === 'out') return <Login />;
   if (status === 'denied') return <Denied />;
   if (status === 'error') return <Problem />;
-  return (<><AppProvider><AppShell>{children}</AppShell></AppProvider><Ignition /></>);
+  return (<><AppProvider><AppShell>{children}</AppShell><BirthdayAsk /></AppProvider><Ignition /></>);
 }

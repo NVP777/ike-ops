@@ -344,6 +344,7 @@ button,input,select,textarea{font-family:inherit}
 }
 .notes{padding:4px 18px 8px}
 .notes .row{align-items:flex-start}
+.nitem{border-bottom:1px solid var(--line)} .nitem:last-child{border:0} .nitem>.row{border:0}
 .notes-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 /* Laptop and desktop: top navigation bar with every tab, wide content column, home as a two-column dashboard, dialogs in the centre. */
 @media (min-width:900px){

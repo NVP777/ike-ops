@@ -35,7 +35,9 @@ export function AuthProvider({ children }) {
       const user = { id: u.id, email, name: u.user_metadata?.full_name || email, avatar: u.user_metadata?.avatar_url || '',
         alertHue: typeof u.user_metadata?.alert_hue === 'number' ? u.user_metadata.alert_hue : null };
       // Is this email on the team list? The database only lets people read their own row here.
-      let { data, error } = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').eq('email', email).maybeSingle();
+      let { data, error } = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks,birth_month,birth_day,birthday_asked').eq('email', email).maybeSingle();
+      // Database not migrated yet (no birthday columns): retry without them.
+      if (error && /birth/.test(error.message || '')) ({ data, error } = await supabase.from('members').select('email,name,role,year,title,page_grants,page_blocks').eq('email', email).maybeSingle());
       // Database not migrated yet (no year / page columns): fall back to the basics.
       if (error && /year|title|page_grants|page_blocks/.test(error.message || '')) ({ data, error } = await supabase.from('members').select('email,name,role').eq('email', email).maybeSingle());
       if (!alive) return;
@@ -73,13 +75,21 @@ export function AuthProvider({ children }) {
     if (error) setAuthError(error.message);
   }, []);
 
+  // Save (or clear, with nulls) my own birthday. Returns an error message or ''.
+  const saveBirthday = useCallback(async (month, day) => {
+    const { error } = await supabase.rpc('set_my_birthday', { p_month: month, p_day: day });
+    if (error) return error.message;
+    setS((cur) => (cur.member ? { ...cur, member: { ...cur.member, birth_month: month, birth_day: day, birthday_asked: true } } : cur));
+    return '';
+  }, []);
+
   const signOut = useCallback(async () => {
     loadedFor.current = null;
     await supabase.auth.signOut();
   }, []);
 
   return (
-    <Ctx.Provider value={{ ...s, ignite, endIgnite: () => setIgnite(false), startIgnite: () => setIgnite(true), signIn, signOut, authError }}>
+    <Ctx.Provider value={{ ...s, ignite, endIgnite: () => setIgnite(false), startIgnite: () => setIgnite(true), saveBirthday, signIn, signOut, authError }}>
       {children}
     </Ctx.Provider>
   );

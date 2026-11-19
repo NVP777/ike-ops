@@ -6,7 +6,7 @@ const hello = (h) => (h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good mornin
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 // "Good evening, Naman" plus one line about what needs you right now.
-export default function Greeting() {
+export default function Greeting({ birthdayName = '' }) {
   const { realRole, has, reimbs, overdue, overdueDocs, pendingReqs } = useApp();
   const { user } = useAuth();
   const first = (user.name || '').trim().split(/\s+/)[0] || 'there';
@@ -20,6 +20,13 @@ export default function Greeting() {
   const late = (has('finance') ? overdue : 0) + overdueDocs;
   if (late) bits.push(`${late} overdue`);
   const line = bits.length ? `${bits.join(', ').replace(/^./, (c) => c.toUpperCase())}.` : 'You have nothing pending right now. 🏁';
+
+  if (birthdayName) return (
+    <div className="greet">
+      <div className="greet-hi">Happy birthday, <b>{birthdayName}</b> 🎂</div>
+      <div className="m">{bits.length ? line : 'Nothing pending. Today is all yours. 🏁'}</div>
+    </div>
+  );
 
   return (
     <div className="greet">

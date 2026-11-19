@@ -5,57 +5,63 @@ import Sheet from './Sheet';
 import { useApp } from '@/lib/store';
 import { PAGES } from '@/lib/nav';
 
-export function NotifSheet() {
-  const { notifs, has, markRead, setSheet, realRole, team, deleteNotif, loadDelivery } = useApp();
-  const [list] = useState(() => notifs.filter((n) => !n.need || has(n.need)));
-  const [gone, setGone] = useState([]);       // ids deleted while this sheet is open
-  const [open, setOpen] = useState(null);     // id whose delivery details are shown
-  const [det, setDet] = useState({});         // id -> rows | null (none recorded)
+// One announcement: text, plus (captain only) "Who got it" and Delete. Used in the sheet and on the home panel.
+export function NotifItem({ n, onGone, timeStyle }) {
+  const { realRole, team, deleteNotif, loadDelivery } = useApp();
+  const [open, setOpen] = useState(false);
+  const [det, setDet] = useState(undefined); // undefined = not loaded, null = none recorded, else rows
   const isCaptain = realRole === 'Captain';
   const nameOf = (email) => { const m = (team || []).find((x) => x.email === email); return m && m.name && !m.name.includes('@') ? m.name : email; };
-  const toggle = async (id) => {
-    if (open === id) { setOpen(null); return; }
-    setOpen(id);
-    if (!(id in det)) { const rows = await loadDelivery(id); setDet((d) => ({ ...d, [id]: rows && rows.length ? rows : null })); }
+  const group = (rows, s) => rows.filter((r) => r.status === s).map((r) => nameOf(r.email)).sort();
+  const toggle = async () => {
+    if (open) { setOpen(false); return; }
+    setOpen(true);
+    if (det === undefined) { const rows = await loadDelivery(n.id); setDet(rows && rows.length ? rows : null); }
   };
-  const remove = async (n) => {
+  const remove = async () => {
     if (!window.confirm(`Delete "${n.t}" for everyone?`)) return;
-    if (await deleteNotif(n.id)) setGone((g) => [...g, n.id]);
+    if (await deleteNotif(n.id)) onGone?.(n.id);
   };
+  return (
+    <div className="nitem">
+      <div className="row">
+        <div className="grow"><div className="t">{!n.read && <span className="dot">● </span>}{n.t}</div><div className="m">{n.b}</div></div>
+        <div className="m" style={timeStyle}>{n.w}</div>
+      </div>
+      {isCaptain && (
+        <div className="two" style={{ margin: '2px 0 10px' }}>
+          <button className="btn ghost" onClick={toggle}>{open ? 'Hide' : 'Who got it'}{n.audience ? ` · ${n.audience}` : ''}</button>
+          <button className="btn ghost" onClick={remove}>Delete</button>
+        </div>
+      )}
+      {isCaptain && open && (
+        <div className="glass pad2" style={{ marginBottom: 10 }}>
+          {det === undefined ? <div className="m">Loading…</div> : det === null ? <div className="m">No delivery record for this announcement (sent before tracking was added).</div> : (
+            <>
+              <div className="m"><b>Sent to ({group(det, 'delivered').length})</b></div>
+              <div className="m" style={{ marginBottom: 8 }}>{group(det, 'delivered').join(', ') || 'No one'}</div>
+              <div className="m"><b>Not sent: notifications off ({group(det, 'not_enabled').length})</b></div>
+              <div className="m" style={{ marginBottom: 8 }}>{group(det, 'not_enabled').join(', ') || 'No one'}</div>
+              <div className="m"><b>Not sent: delivery failed ({group(det, 'failed').length})</b></div>
+              <div className="m">{group(det, 'failed').join(', ') || 'No one'}</div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function NotifSheet() {
+  const { notifs, has, markRead, setSheet } = useApp();
+  const [list] = useState(() => notifs.filter((n) => !n.need || has(n.need)));
+  const [gone, setGone] = useState([]);       // ids deleted while this sheet is open
   useEffect(() => { markRead(); }, []); // eslint-disable-line
   const shownList = list.filter((n) => !gone.includes(n.id));
-  const group = (rows, s) => rows.filter((r) => r.status === s).map((r) => nameOf(r.email)).sort();
   return (
     <Sheet onClose={() => setSheet(null)}>
       <h1 className="sh">Notifications</h1>
-      {shownList.length ? shownList.map((n) => (
-        <div key={n.id}>
-          <div className="row">
-            <div className="grow"><div className="t">{!n.read && <span className="dot">● </span>}{n.t}</div><div className="m">{n.b}</div></div>
-            <div className="m">{n.w}</div>
-          </div>
-          {isCaptain && (
-            <div className="two" style={{ margin: '2px 0 10px' }}>
-              <button className="btn ghost" onClick={() => toggle(n.id)}>{open === n.id ? 'Hide' : 'Who got it'}{n.audience ? ` · ${n.audience}` : ''}</button>
-              <button className="btn ghost" onClick={() => remove(n)}>Delete</button>
-            </div>
-          )}
-          {isCaptain && open === n.id && (
-            <div className="glass pad2" style={{ marginBottom: 10 }}>
-              {!(n.id in det) ? <div className="m">Loading…</div> : det[n.id] === null ? <div className="m">No delivery record for this announcement (sent before tracking was added).</div> : (
-                <>
-                  <div className="m"><b>Sent to ({group(det[n.id], 'delivered').length})</b></div>
-                  <div className="m" style={{ marginBottom: 8 }}>{group(det[n.id], 'delivered').join(', ') || 'No one'}</div>
-                  <div className="m"><b>Not sent: notifications off ({group(det[n.id], 'not_enabled').length})</b></div>
-                  <div className="m" style={{ marginBottom: 8 }}>{group(det[n.id], 'not_enabled').join(', ') || 'No one'}</div>
-                  <div className="m"><b>Not sent: delivery failed ({group(det[n.id], 'failed').length})</b></div>
-                  <div className="m">{group(det[n.id], 'failed').join(', ') || 'No one'}</div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )) : <div className="empty">Announcements will show up here once someone sends one.</div>}
+      {shownList.length ? shownList.map((n) => <NotifItem key={n.id} n={n} onGone={(id) => setGone((g) => [...g, id])} />) : <div className="empty">Announcements will show up here once someone sends one.</div>}
       {has('announce') && <p style={{ marginTop: 16 }}><button className="btn" onClick={() => setSheet('announce')}>Send announcement</button></p>}
     </Sheet>
   );
