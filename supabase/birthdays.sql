@@ -73,7 +73,10 @@ grant execute on function public.unwish_birthday(text) to authenticated;
 create or replace function public.birthday_wishes_today()
 returns table(birthday_email text, from_email text, from_name text, message text, created_at timestamptz)
 language sql stable security definer set search_path = '' as $$
-  select w.birthday_email, w.from_email, m.name::text, w.message, w.created_at
+  -- The lines are private: only the birthday person sees all of them. Everyone else sees only the line they wrote themselves.
+  select w.birthday_email, w.from_email, m.name::text,
+    case when w.birthday_email = lower((select auth.jwt() ->> 'email')) or w.from_email = lower((select auth.jwt() ->> 'email')) then w.message end,
+    w.created_at
   from public.birthday_wishes w
   left join public.members m on lower(m.email) = w.from_email
   where (select public.is_member())
