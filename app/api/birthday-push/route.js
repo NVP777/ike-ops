@@ -1,4 +1,5 @@
-// Morning birthday push, called once a day by the Vercel cron (needs CRON_SECRET). Everyone with notifications on is told whose
+// Birthday push, called once a day at 00:00 India time (18:30 UTC) by the Vercel cron (needs CRON_SECRET). Sent by the server
+// through the push service, so it arrives even when the app is closed. Everyone with notifications on is told whose
 // birthday it is; the birthday person gets their own message. Birthdays are matched on India time.
 import { setVapidDetails, sendNotification } from 'web-push';
 import { createClient } from '@supabase/supabase-js';
@@ -17,7 +18,8 @@ export async function GET(req) {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, service = process.env.SUPABASE_SERVICE_ROLE_KEY, secret = process.env.CRON_SECRET;
     const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
-    if (!url || !service || !pub || !priv || !secret) return Response.json({ error: 'Not configured on the server.' }, { status: 501 });
+    const missing = Object.entries({ NEXT_PUBLIC_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: service, NEXT_PUBLIC_VAPID_PUBLIC_KEY: pub, VAPID_PRIVATE_KEY: priv, CRON_SECRET: secret }).filter(([, v]) => !v).map(([k]) => k);
+    if (missing.length) { console.error('birthday push not configured, missing:', missing.join(', ')); return Response.json({ error: 'Not configured on the server.', missing }, { status: 501 }); }
     if ((req.headers.get('authorization') || '') !== `Bearer ${secret}`) return Response.json({ error: 'Not allowed.' }, { status: 401 });
 
     const ist = new Date(Date.now() + 5.5 * 3600 * 1000);
@@ -40,7 +42,7 @@ export async function GET(req) {
       return people.map(async (p) => {
         const self = p.email === to;
         const payload = JSON.stringify(birthdayPush({ self, nm: p.nm, email: p.email, dayOfYear: doy }));
-        try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload); sent++; }
+        try { await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86400, urgency: 'high' }); sent++; }
         catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(s.endpoint); else console.error('birthday push failed', e.statusCode); }
       });
     }));

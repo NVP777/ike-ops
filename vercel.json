@@ -1,6 +1,6 @@
 {
   "crons": [
     { "path": "/api/cleanup", "schedule": "0 3 * * 0" },
-    { "path": "/api/birthday-push", "schedule": "30 2 * * *" }
+    { "path": "/api/birthday-push", "schedule": "30 18 * * *" }
   ]
 }

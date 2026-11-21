@@ -9,17 +9,22 @@ export const firstName = (name, email) => {
   return s ? s[0].toUpperCase() + s.slice(1) : 'Someone';
 };
 
+const istDay = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+
 // Whose birthday is today, plus the wishes so far. Quietly empty until the birthdays SQL has been run.
 export function useBirthdays() {
   const [data, setData] = useState({ people: [], wishes: [] });
   const load = useCallback(async () => {
-    const p = await supabase.rpc('birthdays_today');
+    // Both calls at once (the wishes call returns nothing when nobody has a birthday), so the card shows after one round trip.
+    const [p, w] = await Promise.all([supabase.rpc('birthdays_today'), supabase.rpc('birthday_wishes_today')]);
     if (p.error) return;
-    if (!p.data?.length) { setData({ people: [], wishes: [] }); return; }
-    const w = await supabase.rpc('birthday_wishes_today');
-    setData({ people: p.data, wishes: w.error ? [] : w.data || [] });
+    const d = { people: p.data || [], wishes: !p.data?.length || w.error ? [] : w.data || [] };
+    setData(d);
+    try { localStorage.setItem('ike-bday-cache', JSON.stringify({ day: istDay(), ...d })); } catch {}
   }, []);
   useEffect(() => {
+    // Show today's last known card straight away while the fresh data loads.
+    try { const c = JSON.parse(localStorage.getItem('ike-bday-cache') || 'null'); if (c && c.day === istDay() && c.people?.length) setData({ people: c.people, wishes: c.wishes || [] }); } catch {}
     load();
     const f = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', f);
